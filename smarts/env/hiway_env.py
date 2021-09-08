@@ -127,6 +127,14 @@ class HiWayEnv(gym.Env):
         if visdom:
             visdom_client = VisdomClient()
 
+        # Action space
+        # TODO : `self.action_space` needs to be added and be automatically
+        # modified depending on `action_adapter` function used.
+
+        # Observation space
+        # TODO : `self.observation_space` needs to be added after the
+        # SMARTS observations are properly typed to be gym compliant.
+
         self._smarts = SMARTS(
             agent_interfaces=agent_interfaces,
             traffic_sim=SumoTrafficSimulation(
@@ -181,6 +189,13 @@ class HiWayEnv(gym.Env):
             observations, rewards, agent_dones, extras = self._smarts.step(
                 agent_actions
             )
+
+
+        print(observations)
+        print("===============================")
+        import sys
+        sys.exit(3)
+
 
         infos = {
             agent_id: {"score": value, "env_obs": observations[agent_id]}

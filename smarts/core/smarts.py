@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 import importlib.resources as pkg_resources
+import gym
 import logging
 import math
 import os
@@ -151,6 +152,30 @@ class SMARTS:
 
         self._ground_bullet_id = None
         self._map_bb = None
+
+    @property
+    def observation_space(self, agent_interfaces: AgentInterface):
+        obs = gym.spaces.Dict({
+            'sensors':  gym.spaces.Dict({
+                'position': gym.spaces.Box(low=-100, high=100, shape=(3,)),
+                'velocity': gym.spaces.Box(low=-1, high=1, shape=(3,)),
+                'front_cam': gym.spaces.Tuple((
+                    gym.spaces.Box(low=0, high=1, shape=(10, 10, 3)),
+                    gym.spaces.Box(low=0, high=1, shape=(10, 10, 3))
+                )),
+                'rear_cam': gym.spaces.Box(low=0, high=1, shape=(10, 10, 3)),
+            }),
+            'ext_controller': gym.spaces.MultiDiscrete((5, 2, 2)),
+            'inner_state': gym.spaces.Dict({
+                'charge': gym.spaces.Discrete(100),
+                'system_checks': gym.spaces.MultiBinary(10),
+                'job_status': gym.spaces.Dict({
+                    'task': gym.spaces.Discrete(5),
+                    'progress': gym.spaces.Box(low=0, high=100, shape=()),
+                })
+            })
+        })
+        return obs
 
     def step(self, agent_actions, time_delta_since_last_step: float = None):
         """Note the time_delta_since_last_step param is in (nominal) seconds."""
