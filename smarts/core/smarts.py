@@ -17,51 +17,52 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-import importlib.resources as pkg_resources
+
 import gym
+import importlib.resources as pkg_resources
 import logging
-import math
 import os
-import warnings
-from collections import defaultdict
-from typing import List, Sequence
-
 import numpy as np
-
-from envision import types as envision_types
-from envision.client import Client as EnvisionClient
+import warnings
 
 with warnings.catch_warnings():
     # XXX: Benign warning, seems no other way to "properly" fix
     warnings.filterwarnings("ignore", "numpy.ufunc size changed")
     from sklearn.metrics.pairwise import euclidean_distances
 
+from collections import defaultdict
+from envision import types as envision_types
+from envision.client import Client as EnvisionClient
 from smarts import VERSION
-from smarts.core.chassis import AckermannChassis, BoxChassis
+from smarts.core import models
+from smarts.core.agent_interface import AgentInterface
+from smarts.core.agent_manager import AgentManager
+from smarts.core.bubble_manager import BubbleManager
+from smarts.core.chassis import BoxChassis
+from smarts.core.colors import SceneColors
+from smarts.core.controllers import ActionSpaceType, Controllers
+from smarts.core.coordinates import BoundingBox, Point
+from smarts.core.external_provider import ExternalProvider
+from smarts.core.motion_planner_provider import MotionPlannerProvider
+from smarts.core.provider import Provider, ProviderState
+from smarts.core.road_map import RoadMap
+from smarts.core.scenario import Mission, Scenario
+from smarts.core.sensors import Collision
+from smarts.core.traffic_history_provider import TrafficHistoryProvider
+from smarts.core.trajectory_interpolation_provider import (
+    TrajectoryInterpolationProvider,
+)
+from smarts.core.trap_manager import TrapManager
+from smarts.core.utils import pybullet
+from smarts.core.utils import spaces as gym_spaces
+from smarts.core.utils.math import rounder_for_dt
+from smarts.core.utils.id import Id
+from smarts.core.utils.pybullet import bullet_client as bc
+from smarts.core.utils.visdom_client import VisdomClient
+from smarts.core.vehicle import VehicleState
+from smarts.core.vehicle_index import VehicleIndex
+from typing import List, Sequence
 
-from . import models
-from .agent_interface import AgentInterface
-from .agent_manager import AgentManager
-from .bubble_manager import BubbleManager
-from .colors import SceneColors
-from .controllers import ActionSpaceType, Controllers
-from .coordinates import BoundingBox, Point
-from .external_provider import ExternalProvider
-from .motion_planner_provider import MotionPlannerProvider
-from .trajectory_interpolation_provider import TrajectoryInterpolationProvider
-from .provider import Provider, ProviderState
-from .road_map import RoadMap
-from .scenario import Mission, Scenario
-from .sensors import Collision
-from .traffic_history_provider import TrafficHistoryProvider
-from .trap_manager import TrapManager
-from .utils import pybullet
-from .utils.math import rounder_for_dt
-from .utils.id import Id
-from .utils.pybullet import bullet_client as bc
-from .utils.visdom_client import VisdomClient
-from .vehicle import VehicleState
-from .vehicle_index import VehicleIndex
 
 logging.basicConfig(
     format="%(asctime)s.%(msecs)03d %(levelname)s: {%(module)s} %(message)s",
@@ -140,6 +141,7 @@ class SMARTS:
         }
 
         # Set up indices
+        self._agent_ids = agent_interfaces.keys()
         self._agent_manager = AgentManager(agent_interfaces, zoo_addrs)
         self._vehicle_index = VehicleIndex()
 
@@ -154,28 +156,70 @@ class SMARTS:
         self._map_bb = None
 
     @property
-    def observation_space(self, agent_interfaces: AgentInterface):
-        obs = gym.spaces.Dict({
-            'sensors':  gym.spaces.Dict({
-                'position': gym.spaces.Box(low=-100, high=100, shape=(3,)),
-                'velocity': gym.spaces.Box(low=-1, high=1, shape=(3,)),
-                'front_cam': gym.spaces.Tuple((
-                    gym.spaces.Box(low=0, high=1, shape=(10, 10, 3)),
-                    gym.spaces.Box(low=0, high=1, shape=(10, 10, 3))
-                )),
-                'rear_cam': gym.spaces.Box(low=0, high=1, shape=(10, 10, 3)),
-            }),
-            'ext_controller': gym.spaces.MultiDiscrete((5, 2, 2)),
-            'inner_state': gym.spaces.Dict({
-                'charge': gym.spaces.Discrete(100),
-                'system_checks': gym.spaces.MultiBinary(10),
-                'job_status': gym.spaces.Dict({
-                    'task': gym.spaces.Discrete(5),
-                    'progress': gym.spaces.Box(low=0, high=100, shape=()),
-                })
-            })
-        })
-        return obs
+    def action_space(self):
+        return gym.spaces.Dict(
+            {
+                agent_id: gym.spaces.Box(
+                    np.array([0, 0, -1]), np.array([+1, +1, +1]), dtype=np.float
+                )  # throttle, break, steering
+                for agent_id in self._agent_ids
+            }
+        )
+
+    @property
+    def observation_space(self):
+        obs_len = 20
+        via_point_space = gym.spaces.Dict(
+            {
+                "position": gym.spaces.Box(low=0, high=1e9, shape=(2,), dtype=np.float),
+                "lane_index": gym.spaces.Box(
+                    low=0, high=1e9, shape=(1,), dtype=np.float
+                ),
+                "road_id": gym_spaces.String(),
+                "required_speed": gym.spaces.Box(
+                    low=0, high=1e9, shape=(1,), dtype=np.float
+                ),
+            }
+        )
+        obs_space = gym.spaces.Dict(
+            {
+                agent_id: gym.spaces.Dict(
+                    {
+                        "dt": gym.spaces.Box(
+                            low=0, high=1e2, shape=(1,), dtype=np.float
+                        ),
+                        "step_count": gym.spaces.Box(
+                            low=0, high=1e9, shape=(1,), dtype=np.uint
+                        ),
+                        "eleapsed_sim_time": gym.spaces.Box(
+                            low=0, high=1e11, shape=(1,), dtype=np.float
+                        ),
+                        # "events": gym.spaces.Box(low=0, high=1e8, dtype=np.float32),
+                        # "ego_vehicle_state": gym.spaces.Box(low=0, high=1e8, dtype=np.float32),
+                        # "neighbourhood_vehicle_states": gym.spaces.Box(low=0, high=1e8, dtype=np.float32),
+                        # "waypoint_paths": gym.spaces.Box(low=0, high=1e8, dtype=np.float32),
+                        # "distance_travelled": gym.spaces.Box(low=0, high=1e8, dtype=np.float32),
+                        # "lidar_point_cloud": gym.spaces.Box(low=0, high=1e8, dtype=np.float32),
+                        # "drivable_area_grid_map": gym.spaces.Box(low=0, high=1e8, dtype=np.float32),
+                        # "occupancy_grid_map": gym.spaces.Box(low=0, high=1e8, dtype=np.float32),
+                        # "top_down_rgb": gym.spaces.Box(low=0, high=1e8, dtype=np.float32),
+                        # "road_waypoints": gym.spaces.Box(low=0, high=1e8, dtype=np.float32),
+                        "via_data": gym.spaces.Dict(
+                            {
+                                "near_via_points": gym.spaces.Tuple(
+                                    [via_point_space] * obs_len
+                                ),
+                                "hit_via_points": gym.spaces.Tuple(
+                                    [via_point_space] * obs_len
+                                ),
+                            }
+                        ),
+                    }
+                )
+                for agent_id in self._agent_ids
+            }
+        )
+        return obs_space
 
     def step(self, agent_actions, time_delta_since_last_step: float = None):
         """Note the time_delta_since_last_step param is in (nominal) seconds."""

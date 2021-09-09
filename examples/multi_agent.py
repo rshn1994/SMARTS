@@ -34,6 +34,15 @@ def main(scenarios, sim_name, headless, num_episodes, seed, max_episode_steps=No
         seed=seed,
     )
 
+    print("Observation Space ------- ")
+    print(env.observation_space)
+    print("Observation Space ------- ")
+    # print("Action Space ------ ")
+    # print(env.action_space)
+    import sys
+
+    sys.exit(3)
+
     for episode in episodes(n=num_episodes):
         agents = {
             agent_id: agent_spec.build_agent()
