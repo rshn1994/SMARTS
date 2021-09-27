@@ -20,16 +20,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import gym
 import multiprocessing as mp
 import numpy as np
 import sys
 import warnings
 
+from ppo import RL, PPO
 from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
+
 
 __all__ = ["ParallelPolicy"]
 
+
+PolicyConstructor = Callable[[], RL]
 
 class ParallelPolicy:
     """Batch together multiple environments and step them in parallel. Each
@@ -42,11 +45,7 @@ class ParallelPolicy:
 
     def __init__(
         self,
-        config,
-        env_constructors: Sequence[EnvConstructor],
-        auto_reset: bool,
-        sim_name: Optional[str] = None,
-        seed=42,
+        policy_constructors: Dict[str, PolicyConstructor],
     ):
         """The models can be different but must use the same action and
         observation specs.
@@ -59,25 +58,25 @@ class ParallelPolicy:
             TypeError: If any environment constructor is not callable.
         """
 
-        if len(env_constructors) > mp.cpu_count():
+        if len(policy_constructors) > mp.cpu_count():
             warnings.warn(
                 f"Simulation might slow down, since the requested number of parallel "
-                f"environments ({len(env_constructors)}) exceed the number of available "
+                f"policies ({len(policy_constructors)}) exceed the number of available "
                 f"CPU cores ({mp.cpu_count()}).",
                 ResourceWarning,
             )
 
-        if any([not callable(ctor) for ctor in env_constructors]):
+        if any([not callable(ctor) for ctor in policy_constructors]):
             raise TypeError(
-                f"Found non-callable `env_constructors`. Expected `env_constructors` of type "
-                f"`Sequence[Callable[[], gym.Env]]`, but got {env_constructors})."
+                f"Found non-callable `policy_constructors`. Expected `policy_constructors` of type "
+                f"`Dict[str, Callable[[], RL]]`, but got {policy_constructors})."
             )
 
         # Worker polling period in seconds.
         self._polling_period = 0.1
 
         mp_ctx = mp.get_context()
-        self.env_constructors = env_constructors
+        self.policy_constructors = policy_constructors
 
         self.error_queue = mp_ctx.Queue()
         self.parent_pipes = []
@@ -138,13 +137,7 @@ class ParallelPolicy:
         # Seed all the environment
         self.seed(seed)
 
-    def seed(self, seed: int) -> Tuple[int]:
-        """Sets unique seed for each environment.
-        Args:
-            seed (int): Seed number.
-        Raises:
-            AlreadyPendingCallError: If `seed` is called while another function call is pending.
-        """
+    def act(self, states_t):
         self._assert_is_running()
         seeds = [seed + i for i in range(self.num_envs)]
 

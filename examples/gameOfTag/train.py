@@ -37,6 +37,7 @@ from enum import Enum
 from examples.gameOfTag import env as got_env
 from examples.gameOfTag import agent as got_agent
 from examples.gameOfTag import ppo as got_ppo
+from parallel_policy import ParallelPolicy
 from pathlib import Path
 from typing import Dict, List
 
@@ -89,6 +90,22 @@ def main(config):
     print("[INFO] Creating model")
     ppo_predator = got_ppo.PPO(AgentType.PREDATOR.value, config)
     ppo_prey = got_ppo.PPO(AgentType.PREY.value, config)
+
+    # Create parallel policies
+    policy_constructors = {
+        AgentType.PREDATOR.value : lambda : got_ppo.PPO(
+                name=AgentType.PREDATOR.value,
+                config=config,
+            ),
+        AgentType.PREY.value : lambda : got_ppo.PPO(
+                name=AgentType.PREY.value,
+                config=config,
+            ),
+    }
+    policies = ParallelPolicy(
+        policy_constructors=policy_constructors,
+    )
+
 
     def interrupt(*args):
         nonlocal mode

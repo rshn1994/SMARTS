@@ -41,8 +41,8 @@ model_para:
   num_train_epochs: 5
 
   # Models and logs
-  save_interval: 50
-  eval_interval: 50
+  save_interval: 10
+  eval_interval: 10
   mode: train # train or evaluate
   model_initial: false
   # Local
