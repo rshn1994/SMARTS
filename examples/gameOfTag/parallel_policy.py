@@ -49,7 +49,8 @@ class ParallelPolicy:
         self,
         policy_constructors: Dict[str, PolicyConstructor],
     ):
-        """The policies can be different but must use the same input and output specs.
+        """The policies can be different but must use the same input and output interfaces.
+
         Args:
             policy_constructors (Dict[str, PolicyConstructor]): List of callables that create policies.
         """
@@ -121,6 +122,12 @@ class ParallelPolicy:
         return 1
 
     def save(self, versions: Dict[str, int]):
+        """Save the current policy.
+
+        Args:
+            versions (Dict[str, int]): A dictionary, with the key being the policy id and the value
+                being the version number for the current policy model to be saved.
+        """
         for policy_id, version in versions.items():
             self.parent_pipes[policy_id].send(("save", version))
 
@@ -131,6 +138,12 @@ class ParallelPolicy:
         self._raise_if_errors(results)
 
     def write_to_tb(self, records: Dict[str, Any]):
+        """Write records to tensorboard.
+
+        Args:
+            records (Dict[str, Any]): A dictionary, with the key being the policy id and the value
+                being the data to be recorded for that policy.
+        """
         for policy_id, record in records.items():
             self.parent_pipes[policy_id].send(("write_to_tb", record))
 
@@ -192,12 +205,10 @@ def _worker(
 ):
     """Process to build and run a policy. Using a pipe to communicate with parent, the
     process receives instructions, and returns results.
+
     Args:
-        index (int): Policy index number.
-        policy_id (str): Policy id.
         policy_constructor (CloudpickleWrapper): Callable which constructs the policy.
         pipe (mp.connection.Connection): Child's end of the pipe.
-        error_queue (mp.Queue): Queue to communicate error messages.
         polling_period (float): Time to wait for keyboard interrupts.
     """
 

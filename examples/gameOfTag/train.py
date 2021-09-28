@@ -97,7 +97,6 @@ def main(config):
         policy_constructors=policy_constructors,
     )
 
-
     def interrupt(*args):
         nonlocal mode
         if mode == Mode.TRAIN:
