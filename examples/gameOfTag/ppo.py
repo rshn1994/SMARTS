@@ -92,7 +92,8 @@ class NeuralNetwork(tf.keras.Model):
         value = self.value(dense_value_out)
         return policy, value
 
-class RL():
+
+class RL:
     def __init__(self):
         pass
 
@@ -102,10 +103,11 @@ class RL():
     def close(self):
         raise NotImplementedError
 
+
 class PPO(RL):
     def __init__(self, name, config):
         super(PPO, self).__init__()
-        
+
         self.name = name
         self.config = config
         self.seed = config["env_para"]["seed"]

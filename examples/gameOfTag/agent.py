@@ -1,11 +1,12 @@
 import numpy as np
 import tensorflow as tf
+from examples.gameOfTag.types import AgentType
 
 
 class TagAgent:
     def __init__(self, name, config):
         # Verify name
-        if "predator" in name or "prey" in name:
+        if AgentType.PREDATOR.value in name or AgentType.PREY.value in name:
             self.name = name
         else:
             raise Exception(f"Expected predator or prey, but got {name}.")

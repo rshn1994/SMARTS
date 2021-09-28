@@ -21,13 +21,12 @@
 # THE SOFTWARE.
 
 import multiprocessing as mp
-import numpy as np
 import sys
 import warnings
 
-from ppo import RL, PPO
+from ppo import RL
 from smarts.env.utils.cloud_pickle import CloudpickleWrapper
-from typing import Any, Callable, Dict, List, Sequence, Text, Tuple, Union
+from typing import Any, Callable, Dict, Tuple
 
 
 __all__ = ["ParallelPolicy"]
@@ -35,10 +34,12 @@ __all__ = ["ParallelPolicy"]
 
 PolicyConstructor = Callable[[], RL]
 
+
 class ParallelPolicy:
     """Batch together multiple policies and step them in parallel. Each
     policy is simulated in an external process for lock-free parallelism
     using `multiprocessing` processes, and pipes for communication.
+
     Note:
         Simulation might slow down when number of parallel environments
         requested exceed number of available CPU logical cores.
@@ -70,13 +71,13 @@ class ParallelPolicy:
         # Worker polling period in seconds.
         self._polling_period = 0.1
 
-        self.closed=False
+        self.closed = False
         mp_ctx = mp.get_context()
 
         self.error_queue = mp_ctx.Queue()
         self.parent_pipes = {}
         self.processes = {}
-        for idx, (policy_id, policy_constructor) in enumerate(policy_constructors.items()):
+        for policy_id, policy_constructor in policy_constructors.items():
             parent_pipe, child_pipe = mp_ctx.Pipe()
             process = mp_ctx.Process(
                 target=_worker,
@@ -97,60 +98,69 @@ class ParallelPolicy:
             child_pipe.close()
 
         # Wait for all policies to successfully startup
-        results = {policy_id: pipe.recv() for policy_id, pipe in self.parent_pipes.items()}
+        results = {
+            policy_id: pipe.recv() for policy_id, pipe in self.parent_pipes.items()
+        }
         self._raise_if_errors(results)
 
+    def act(self, states: Dict[str, Any]):
+        #     for name, value in dic.items():
+        #         self.parent_pipes[policy_id].send((method,val))
 
-    def save(self):
-        pass
+        #     payload = args, kwargs
+        #     self._conn.send((name, payload))
+        #     return self._receive
+        # results = {policy_id: pipe.recv() for policy_id, pipe in self.parent_pipes.items()}
+        # self._raise_if_errors(results)
 
-    def act(self):
-        pass
+        #     for pipe, seed in zip(self.parent_pipes, seeds):
+        #         pipe.send(("seed", seed))
+        #     seeds, successes = zip(*[pipe.recv() for pipe in self.parent_pipes])
+        #     self._raise_if_errors(successes)
 
-    def write_to_tb(self):
-        pass
+        return 1
 
-    def model(self):
-        pass
+    def save(self, versions: Dict[str, int]):
+        for policy_id, version in versions.items():
+            self.parent_pipes[policy_id].send(("save", version))
 
-    def optimizer(self):
-        pass
+        results = {
+            policy_id: self.parent_pipes[policy_id].recv()
+            for policy_id in versions.keys()
+        }
+        self._raise_if_errors(results)
 
+    def write_to_tb(self, records: Dict[str, Any]):
+        for policy_id, record in records.items():
+            self.parent_pipes[policy_id].send(("write_to_tb", record))
 
-    #     for pipe, seed in zip(self.parent_pipes, seeds):
-    #         pipe.send(("seed", seed))
-    #     seeds, successes = zip(*[pipe.recv() for pipe in self.parent_pipes])
-    #     self._raise_if_errors(successes)
+        results = {
+            policy_id: self.parent_pipes[policy_id].recv()
+            for policy_id in records.keys()
+        }
+        self._raise_if_errors(results)
 
-    #     return seeds
+    def _raise_if_errors(self, results: Dict[str, Tuple[Any, bool]]):
+        successes = list(zip(*results.values()))[1]
+        if all(successes):
+            return
 
-    # def reset_wait(
-    #     self, timeout: Union[int, float, None] = None
-    # ) -> Sequence[Dict[str, Any]]:
-    #     """Waits for all environments to reset.
-    #     Args:
-    #         timeout (Union[int, float, None], optional): Seconds to wait before timing out.
-    #             Defaults to None, and never times out.
-    #     Raises:
-    #         NoAsyncCallError: If `reset_wait` is called without calling `reset_async`.
-    #         mp.TimeoutError: If response is not received from pipe within `timeout` seconds.
-    #     Returns:
-    #         Sequence[Dict[str, Any]]: A batch of observations from the vectorized environment.
-    #     """
+        for policy_id, (error, _) in results.items():
+            if error:
+                exctype, value = error
+                print(
+                    f"Exception in Worker-<{type(self).__name__}>-<{policy_id}>: {exctype.__name__}\n  {value}"
+                )
 
-    #     self._assert_is_running()
-    #     if self._state != AsyncState.WAITING_RESET:
-    #         raise NoAsyncCallError(
-    #             "Calling `reset_wait` without any prior call to `reset_async`.",
-    #             AsyncState.WAITING_RESET.value,
-    #         )
+        self.close()
+        raise Exception("Error in parallel policy workers.")
 
-    def close(self, terminate=True):
+    def close(self, terminate=False):
         """Closes all processes alive.
 
         Args:
             terminate (bool, optional): If `True`, then the `close` operation is forced and all
-                processes are terminated. Defaults to True.
+                processes are terminated. Defaults to False.
         """
         if terminate:
             for process in self.processes.values():
@@ -158,24 +168,21 @@ class ParallelPolicy:
                     process.terminate()
         else:
             for pipe in self.parent_pipes.values():
-                if (pipe is not None) and (not pipe.closed):
+                try:
                     pipe.send(("close", None))
-            for pipe in self.parent_pipes.values():
-                if (pipe is not None) and (not pipe.closed):
-                    pipe.recv()
+                    pipe.close()
+                except IOError:
+                    # The connection was already closed.
+                    pass
 
-        for pipe in self.parent_pipes.values():
-            if pipe is not None:
-                pipe.close()
         for process in self.processes.values():
             process.join()
+
+        self.closed = True
 
     def __del__(self):
         if not self.closed:
             self.close()
-            self.closed=True
-
-    #     observations, successes = zip(*[pipe.recv() for pipe in self.parent_pipes])
 
 
 def _worker(
@@ -194,13 +201,13 @@ def _worker(
         polling_period (float): Time to wait for keyboard interrupts.
     """
 
-    # Construct the environment
-    policy = policy_constructor()
-
-    # Environment setup complete
-    pipe.send((None, True))
-
     try:
+        # Construct the policy
+        policy = policy_constructor()
+
+        # Policy setup complete
+        pipe.send((None, True))
+
         while True:
             # Short block for keyboard interrupts
             if not pipe.poll(polling_period):
@@ -216,15 +223,14 @@ def _worker(
                 policy.write_to_tb(data)
                 pipe.send((None, True))
             elif command == "close":
-                pipe.send((None, True))
                 break
             else:
                 raise KeyError(f"Received unknown command `{command}`.")
-    except (KeyboardInterrupt, EOFError):
+    except KeyboardInterrupt:
         error = (sys.exc_info()[0], "Traceback is hidden.")
         pipe.send((error, False))
     except Exception:
-        error = (sys.exc_info()[:2])
+        error = sys.exc_info()[:2]
         pipe.send((error, False))
     finally:
         policy.close()

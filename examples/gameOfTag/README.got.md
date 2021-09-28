@@ -57,6 +57,7 @@ $ PYTHONHASHSEED=0 python3.7 ./examples/gameOfTag/evaluate.py
 ## Tensorboard
 ```
 $ tensorboard --logdir=/home/adai/workspaces/SMARTS/examples/gameOfTag/logs
+$ tensorboard --logdir=/home/adai/workspaces/training/got_2021_09_27_03_36/logs
 ```
 
 ## TODO

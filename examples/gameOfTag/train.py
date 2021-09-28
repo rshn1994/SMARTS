@@ -37,19 +37,10 @@ from enum import Enum
 from examples.gameOfTag import env as got_env
 from examples.gameOfTag import agent as got_agent
 from examples.gameOfTag import ppo as got_ppo
+from examples.gameOfTag.types import AgentType, Mode
 from parallel_policy import ParallelPolicy
 from pathlib import Path
 from typing import Dict, List
-
-
-class AgentType(Enum):
-    PREDATOR = "predator"
-    PREY = "prey"
-
-
-class Mode(Enum):
-    EVALUATE = "evaluate"
-    TRAIN = "train"
 
 
 def main(config):
@@ -93,14 +84,14 @@ def main(config):
 
     # Create parallel policies
     policy_constructors = {
-        AgentType.PREDATOR.value : lambda : got_ppo.PPO(
-                name=AgentType.PREDATOR.value,
-                config=config,
-            ),
-        AgentType.PREY.value : lambda : got_ppo.PPO(
-                name=AgentType.PREY.value,
-                config=config,
-            ),
+        AgentType.PREDATOR.value: lambda: got_ppo.PPO(
+            name=AgentType.PREDATOR.value,
+            config=config,
+        ),
+        AgentType.PREY.value: lambda: got_ppo.PPO(
+            name=AgentType.PREY.value,
+            config=config,
+        ),
     }
     policies = ParallelPolicy(
         policy_constructors=policy_constructors,
@@ -109,9 +100,9 @@ def main(config):
 
     def interrupt(*args):
         nonlocal mode
-        if mode == Mode.TRAIN.value:
+        if mode == Mode.TRAIN:
             ppo_predator.save(-1)
-            ppo_prey.save(-1)    
+            ppo_prey.save(-1)
         env.close()
         print("Interrupt key detected.")
         sys.exit(0)
