@@ -96,6 +96,12 @@ class RL():
     def __init__(self):
         pass
 
+    def act(self):
+        raise NotImplementedError
+
+    def close(self):
+        raise NotImplementedError
+
 class PPO(RL):
     def __init__(self, name, config):
         super(PPO, self).__init__()
@@ -123,6 +129,9 @@ class PPO(RL):
             f"{name}_{datetime.now().strftime('%Y_%m_%d_%H_%M')}"
         )
         self.tb = tf.summary.create_file_writer(str(path))
+
+    def close(self):
+        pass
 
     def save(self, version: int):
         save_path = self.model_path / str(version)

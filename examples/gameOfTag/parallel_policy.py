@@ -26,7 +26,8 @@ import sys
 import warnings
 
 from ppo import RL, PPO
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
+from smarts.env.utils.cloud_pickle import CloudpickleWrapper
+from typing import Any, Callable, Dict, List, Sequence, Text, Tuple, Union
 
 
 __all__ = ["ParallelPolicy"]
@@ -69,28 +70,25 @@ class ParallelPolicy:
         # Worker polling period in seconds.
         self._polling_period = 0.1
 
+        self.closed=False
         mp_ctx = mp.get_context()
-        self.policy_constructors = policy_constructors
 
         self.error_queue = mp_ctx.Queue()
-        self.parent_pipes = []
-        self.processes = []
-        for idx, env_constructor in enumerate(self.env_constructors):
+        self.parent_pipes = {}
+        self.processes = {}
+        for idx, (policy_id, policy_constructor) in enumerate(policy_constructors.items()):
             parent_pipe, child_pipe = mp_ctx.Pipe()
             process = mp_ctx.Process(
                 target=_worker,
-                name=f"Worker<{type(self).__name__}>-<{idx}>",
+                name=f"Worker-<{type(self).__name__}>-<{policy_id}>",
                 args=(
-                    idx,
-                    sim_name,
-                    CloudpickleWrapper(env_constructor),
+                    CloudpickleWrapper(policy_constructor),
                     child_pipe,
-                    self.error_queue,
                     self._polling_period,
                 ),
             )
-            self.parent_pipes.append(parent_pipe)
-            self.processes.append(process)
+            self.parent_pipes.update({policy_id: parent_pipe})
+            self.processes.update({policy_id: process})
 
             # Daemonic subprocesses quit when parent process quits. However, daemonic
             # processes cannot spawn children. Hence, `process.daemon` is set to False.
@@ -98,12 +96,10 @@ class ParallelPolicy:
             process.start()
             child_pipe.close()
 
-    #     # Wait for all environments to successfully startup
-    #     _, successes = zip(*[pipe.recv() for pipe in self.parent_pipes])
-    #     self._raise_if_errors(successes)
+        # Wait for all policies to successfully startup
+        results = {policy_id: pipe.recv() for policy_id, pipe in self.parent_pipes.items()}
+        self._raise_if_errors(results)
 
-    #     # Get and check observation and action spaces
-    #     observation_space, action_space = self._get_spaces()
 
     def save(self):
         pass
@@ -149,149 +145,87 @@ class ParallelPolicy:
     #             AsyncState.WAITING_RESET.value,
     #         )
 
-    #     if not self._poll(timeout):
-    #         self._state = AsyncState.DEFAULT
-    #         raise mp.TimeoutError(
-    #             "The call to `reset_wait` has timed out after "
-    #             "{0} second{1}.".format(timeout, "s" if timeout > 1 else "")
-    #         )
+    def close(self, terminate=True):
+        """Closes all processes alive.
+
+        Args:
+            terminate (bool, optional): If `True`, then the `close` operation is forced and all
+                processes are terminated. Defaults to True.
+        """
+        if terminate:
+            for process in self.processes.values():
+                if process.is_alive():
+                    process.terminate()
+        else:
+            for pipe in self.parent_pipes.values():
+                if (pipe is not None) and (not pipe.closed):
+                    pipe.send(("close", None))
+            for pipe in self.parent_pipes.values():
+                if (pipe is not None) and (not pipe.closed):
+                    pipe.recv()
+
+        for pipe in self.parent_pipes.values():
+            if pipe is not None:
+                pipe.close()
+        for process in self.processes.values():
+            process.join()
+
+    def __del__(self):
+        if not self.closed:
+            self.close()
+            self.closed=True
 
     #     observations, successes = zip(*[pipe.recv() for pipe in self.parent_pipes])
-    #     self._raise_if_errors(successes)
-    #     self._state = AsyncState.DEFAULT
-
-    #     return observations
-
-    # def step_wait(
-    #     self, timeout: Union[int, float, None] = None
-    # ) -> Tuple[
-    #     Sequence[Dict[str, Any]],
-    #     Sequence[Dict[str, float]],
-    #     Sequence[Dict[str, bool]],
-    #     Sequence[Dict[str, Any]],
-    # ]:
-    #     """Waits and returns batched (observations, rewards, dones, infos) from all environments after a single step.
-    #     Args:
-    #         timeout (Union[int, float, None], optional): Seconds to wait before timing out.
-    #             Defaults to None, and never times out.
-    #     Raises:
-    #         NoAsyncCallError: If `step_wait` is called without calling `step_async`.
-    #         mp.TimeoutError: If data is not received from pipe within `timeout` seconds.
-    #     Returns:
-    #         Tuple[ Sequence[Dict[str, Any]], Sequence[Dict[str, float]], Sequence[Dict[str, bool]], Sequence[Dict[str, Any]] ]:
-    #             Returns (observations, rewards, dones, infos). Each tuple element is a batch from the vectorized environment.
-    #     """
-
-    #     self._assert_is_running()
-    #     if self._state != AsyncState.WAITING_STEP:
-    #         raise NoAsyncCallError(
-    #             "Calling `step_wait` without any prior call to `step_async`.",
-    #             AsyncState.WAITING_STEP.value,
-    #         )
-
-    #     if not self._poll(timeout):
-    #         self._state = AsyncState.DEFAULT
-    #         raise mp.TimeoutError(
-    #             "The call to `step_wait` has timed out after "
-    #             "{0} second{1}.".format(timeout, "s" if timeout > 1 else "")
-    #         )
-
-    #     results, successes = zip(*[pipe.recv() for pipe in self.parent_pipes])
-    #     self._raise_if_errors(successes)
-    #     self._state = AsyncState.DEFAULT
-    #     observations_list, rewards, dones, infos = zip(*results)
-
-    #     return (
-    #         observations_list,
-    #         rewards,
-    #         dones,
-    #         infos,
-    #     )
-
-    # def _get_spaces(self) -> Tuple[gym.Space, gym.Space]:
-    #     for pipe in self.parent_pipes:
-    #         pipe.send(("_get_spaces", None))
-    #     spaces, successes = zip(*[pipe.recv() for pipe in self.parent_pipes])
-    #     self._raise_if_errors(successes)
-
-    #     observation_space = spaces[0][0]
-    #     action_space = spaces[0][1]
-
-    #     if not all([space[0] == observation_space for space in spaces]) or not all(
-    #         [space[1] == action_space for space in spaces]
-    #     ):
-    #         raise RuntimeError(
-    #             f"Expected all environments to have the same observation and action"
-    #             f"spaces, but got {spaces}."
-    #         )
-
-    #     return observation_space, action_space
 
 
-# def _worker(
-#     index: int,
-#     sim_name: str,
-#     env_constructor: CloudpickleWrapper,
-#     auto_reset: bool,
-#     pipe: mp.connection.Connection,
-#     error_queue: mp.Queue,
-#     polling_period: float = 0.1,
-# ):
-#     """Process to build and run an environment. Using a pipe to
-#     communicate with parent, the process receives action, steps
-#     the environment, and returns the observations.
-#     Args:
-#         index (int): Environment index number.
-#         env_constructor (CloudpickleWrapper): Callable which constructs the environment.
-#         auto_reset (bool): If True, auto resets environment when episode ends.
-#         pipe (mp.connection.Connection): Child's end of the pipe.
-#         error_queue (mp.Queue): Queue to communicate error messages.
-#         polling_period (float): Time to wait for keyboard interrupts.
-#     """
+def _worker(
+    policy_constructor: CloudpickleWrapper,
+    pipe: mp.connection.Connection,
+    polling_period: float = 0.1,
+):
+    """Process to build and run a policy. Using a pipe to communicate with parent, the
+    process receives instructions, and returns results.
+    Args:
+        index (int): Policy index number.
+        policy_id (str): Policy id.
+        policy_constructor (CloudpickleWrapper): Callable which constructs the policy.
+        pipe (mp.connection.Connection): Child's end of the pipe.
+        error_queue (mp.Queue): Queue to communicate error messages.
+        polling_period (float): Time to wait for keyboard interrupts.
+    """
 
-#     # Name and construct the environment
-#     name = f"env_{index}"
-#     if sim_name:
-#         name = sim_name + "_" + name
-#     env = env_constructor(sim_name=name)
+    # Construct the environment
+    policy = policy_constructor()
 
-#     # Environment setup complete
-#     pipe.send((None, True))
+    # Environment setup complete
+    pipe.send((None, True))
 
-#     try:
-#         while True:
-#             # Short block for keyboard interrupts
-#             if not pipe.poll(polling_period):
-#                 continue
-#             command, data = pipe.recv()
-#             if command == "reset":
-#                 observation = env.reset()
-#                 pipe.send((observation, True))
-#             elif command == "step":
-#                 observation, reward, done, info = env.step(data)
-#                 if done["__all__"] and auto_reset:
-#                     # Actual final observations can be obtained from `info`:
-#                     # ```
-#                     # final_obs = info[agent_id]["env_obs"]
-#                     # ```
-#                     observation = env.reset()
-#                 pipe.send(((observation, reward, done, info), True))
-#             elif command == "seed":
-#                 env_seed = env.seed(data)
-#                 pipe.send((env_seed, True))
-#             elif command == "close":
-#                 pipe.send((None, True))
-#                 break
-#             elif command == "_get_spaces":
-#                 pipe.send(((env.observation_space, env.action_space), True))
-#             else:
-#                 raise KeyError(f"Received unknown command `{command}`.")
-#     except KeyboardInterrupt:
-#         error_queue.put((index, sys.exc_info()[0], "Traceback is hidden."))
-#         pipe.send((None, False))
-#     except Exception:
-#         error_queue.put((index,) + sys.exc_info()[:2])
-#         pipe.send((None, False))
-#     finally:
-#         env.close()
-#         pipe.close()
+    try:
+        while True:
+            # Short block for keyboard interrupts
+            if not pipe.poll(polling_period):
+                continue
+            command, data = pipe.recv()
+            if command == "act":
+                result = policy.act(data)
+                pipe.send((result, True))
+            elif command == "save":
+                policy.save(data)
+                pipe.send((None, True))
+            elif command == "write_to_tb":
+                policy.write_to_tb(data)
+                pipe.send((None, True))
+            elif command == "close":
+                pipe.send((None, True))
+                break
+            else:
+                raise KeyError(f"Received unknown command `{command}`.")
+    except (KeyboardInterrupt, EOFError):
+        error = (sys.exc_info()[0], "Traceback is hidden.")
+        pipe.send((error, False))
+    except Exception:
+        error = (sys.exc_info()[:2])
+        pipe.send((error, False))
+    finally:
+        policy.close()
+        pipe.close()
