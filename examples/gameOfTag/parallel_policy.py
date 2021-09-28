@@ -73,8 +73,8 @@ class ParallelPolicy:
         self._polling_period = 0.1
 
         self.closed = False
+        self.policy_ids = policy_constructors.keys()
         mp_ctx = mp.get_context()
-
         self.error_queue = mp_ctx.Queue()
         self.parent_pipes = {}
         self.processes = {}

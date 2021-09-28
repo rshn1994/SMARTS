@@ -102,6 +102,8 @@ def main(config):
         if mode == Mode.TRAIN:
             ppo_predator.save(-1)
             ppo_prey.save(-1)
+            policies.save({AgentType.PREDATOR:-1, AgentType.PREY:-1})
+        policies.close()
         env.close()
         print("Interrupt key detected.")
         sys.exit(0)
@@ -323,8 +325,10 @@ def main(config):
             print("[INFO] Saving model")
             ppo_predator.save(step)
             ppo_prey.save(step)
+            policies.save({AgentType.PREDATOR:step, AgentType.PREY:step})
 
-    # Close env
+    # Close policies and env
+    policies.close()
     env.close()
 
 
