@@ -95,6 +95,7 @@ def main(config):
     }
     policies = ParallelPolicy(
         policy_constructors=policy_constructors,
+        config=config,
     )
 
     def interrupt(*args):
@@ -102,7 +103,7 @@ def main(config):
         if mode == Mode.TRAIN:
             ppo_predator.save(-1)
             ppo_prey.save(-1)
-            policies.save({AgentType.PREDATOR:-1, AgentType.PREY:-1})
+            policies.save({AgentType.PREDATOR.value:-1, AgentType.PREY.value:-1})
         policies.close()
         env.close()
         print("Interrupt key detected.")
@@ -145,6 +146,15 @@ def main(config):
             action_samples_t.update(action_samples_t_prey)
             values_t.update(values_t_predator)
             values_t.update(values_t_prey)
+
+            print("second attempt rytiririririr")
+            actions_t_prey_2, action_samples_t_prey_2, values_t_prey_2 = policies.act(states_t)
+            # print(actions_t_prey, action_samples_t_prey, values_t_prey)
+            # print(actions_t_prey_2, action_samples_t_prey_2, values_t_prey_2)
+            print("wwwwwwwwwweeeeeee")
+            import sys
+
+            sys.exit(1)
 
             # Sample action from a distribution
             action_numpy_t = {

@@ -1,32 +1,41 @@
-# MIT License
-#
-# Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+import os
+
+# Set pythonhashseed
+os.environ["PYTHONHASHSEED"] = "0"
+# Silence the logs of TF
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+
+# The below is necessary for starting Numpy generated random numbers
+# in a well-defined initial state.
+import numpy as np
+
+np.random.seed(123)
+
+# The below is necessary for starting core Python generated random numbers
+# in a well-defined state.
+import random as python_random
+
+python_random.seed(123)
+
+# The below set_seed() will make random number generation
+# in the TensorFlow backend have a well-defined initial state.
+# For further details, see:
+# https://www.tensorflow.org/api_docs/python/tf/random/set_seed
+import tensorflow as tf
+
+tf.random.set_seed(123)
+
+# --------------------------------------------------------------------------
 
 import multiprocessing as mp
 import sys
 import warnings
 
+from examples.gameOfTag.types import AgentType
+from collections import defaultdict
 from ppo import RL
 from smarts.env.utils.cloud_pickle import CloudpickleWrapper
-from typing import Any, Callable, Dict, Tuple
+from typing import Any, Callable, DefaultDict, Dict, Tuple
 
 
 __all__ = ["ParallelPolicy"]
@@ -48,6 +57,7 @@ class ParallelPolicy:
     def __init__(
         self,
         policy_constructors: Dict[str, PolicyConstructor],
+        config,
     ):
         """The policies can be different but must use the same input and output interfaces.
 
@@ -85,6 +95,7 @@ class ParallelPolicy:
                 name=f"Worker-<{type(self).__name__}>-<{policy_id}>",
                 args=(
                     CloudpickleWrapper(policy_constructor),
+                    config,
                     child_pipe,
                     self._polling_period,
                 ),
@@ -104,22 +115,57 @@ class ParallelPolicy:
         }
         self._raise_if_errors(results)
 
-    def act(self, states: Dict[str, Any]):
-        #     for name, value in dic.items():
-        #         self.parent_pipes[policy_id].send((method,val))
+    @staticmethod
+    def _agent_to_policy_id(agent_id:str, policy_ids)->str:
+        ids = [policy_id for policy_id in policy_ids if policy_id in agent_id]
+        if len(ids) == 0:
+            raise KeyError(f"Agent_id {agent_id} does not match any policy ids {policy_ids}.")
+        if len(ids) > 1:
+            raise KeyError(f"Agent_id {agent_id} matches multiple policy ids {policy_ids}.")
+        return ids[0]
 
-        #     payload = args, kwargs
-        #     self._conn.send((name, payload))
-        #     return self._receive
-        # results = {policy_id: pipe.recv() for policy_id, pipe in self.parent_pipes.items()}
+    def act(self, states_t: Dict[str, Any]) -> Dict[str, Any]:
+        dd_state = defaultdict(dict)
+        for agent_id, state in states_t.items():
+            policy_id = self._agent_to_policy_id(agent_id, self.policy_ids)
+            dd_state[policy_id].update({agent_id: state})
+
+        for policy_id, states in dd_state.items():
+            self.parent_pipes[policy_id].send(("act", states))
+
+        print("iside 2 --------------------")      
+        results = {
+            policy_id: self.parent_pipes[policy_id].recv()
+            for policy_id in dd_state.keys()
+        }
+        print("iside 3 --------------------")
+        self._raise_if_errors(results)
+
+        actions_t = {}
+        action_samples_t = {}
+        values_t = {}
+        for policy_id, (result, _) in results.items():
+            actions, action_samples, values = result
+            actions_t.update(actions)
+            action_samples_t.update(action_samples)
+            values_t.update(values)
+
+        return actions_t, action_samples_t, values_t
+
+
+    def train(self, states: Dict[str, Any]) -> Dict[str, Any]:
+        # for agent_id, states_t in states.items():
+        #     policy_id = self._agent_to_policy_id(agent_id)
+        #     self.parent_pipes[policy_id].send(("act", states_t))
+
+        # results = {
+        #     policy_id: self.parent_pipes[policy_id].recv()
+        #     for policy_id in states.keys()
+        # }
         # self._raise_if_errors(results)
 
-        #     for pipe, seed in zip(self.parent_pipes, seeds):
-        #         pipe.send(("seed", seed))
-        #     seeds, successes = zip(*[pipe.recv() for pipe in self.parent_pipes])
-        #     self._raise_if_errors(successes)
+        return
 
-        return 1
 
     def save(self, versions: Dict[str, int]):
         """Save the current policy.
@@ -158,8 +204,8 @@ class ParallelPolicy:
         if all(successes):
             return
 
-        for policy_id, (error, _) in results.items():
-            if error:
+        for policy_id, (error, success) in results.items():
+            if not success:
                 exctype, value = error
                 print(
                     f"Exception in Worker-<{type(self).__name__}>-<{policy_id}>: {exctype.__name__}\n  {value}"
@@ -200,6 +246,7 @@ class ParallelPolicy:
 
 def _worker(
     policy_constructor: CloudpickleWrapper,
+    config,
     pipe: mp.connection.Connection,
     polling_period: float = 0.1,
 ):
@@ -212,9 +259,50 @@ def _worker(
         polling_period (float): Time to wait for keyboard interrupts.
     """
 
+    import os
+
+    # Set pythonhashseed
+    os.environ["PYTHONHASHSEED"] = "0"
+    # Silence the logs of TF
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+
+    # The below is necessary for starting Numpy generated random numbers
+    # in a well-defined initial state.
+    import numpy as np
+
+    np.random.seed(123)
+
+    # The below is necessary for starting core Python generated random numbers
+    # in a well-defined state.
+    import random as python_random
+
+    python_random.seed(123)
+
+    # The below set_seed() will make random number generation
+    # in the TensorFlow backend have a well-defined initial state.
+    # For further details, see:
+    # https://www.tensorflow.org/api_docs/python/tf/random/set_seed
+    import tensorflow as tf
+
+    tf.random.set_seed(123)
+
+    # --------------------------------------------------------------------------
+    import absl.logging
+    import tensorflow_probability as tfp
+
+    from datetime import datetime
+    from examples.gameOfTag import ppo as got_ppo
+    from pathlib import Path
+    from typing import Any, Dict, List, Tuple
+
+    # Suppress warning
+    absl.logging.set_verbosity(absl.logging.ERROR)
+
+
     try:
         # Construct the policy
-        policy = policy_constructor()
+        # policy = policy_constructor()
+        policy = got_ppo.PPO(AgentType.PREDATOR.value, config)
 
         # Policy setup complete
         pipe.send((None, True))
@@ -225,7 +313,9 @@ def _worker(
                 continue
             command, data = pipe.recv()
             if command == "act":
+                print("ENTERING INSIDE ACT IN LOOP --------------")
                 result = policy.act(data)
+                print("RETURNING AFTER ACT IN LOOP --------------")
                 pipe.send((result, True))
             elif command == "save":
                 policy.save(data)
