@@ -95,7 +95,6 @@ def main(config):
     }
     policies = ParallelPolicy(
         policy_constructors=policy_constructors,
-        config=config,
     )
 
     def interrupt(*args):
@@ -149,11 +148,13 @@ def main(config):
 
             print("second attempt rytiririririr")
             actions_t_prey_2, action_samples_t_prey_2, values_t_prey_2 = policies.act(states_t)
-            # print(actions_t_prey, action_samples_t_prey, values_t_prey)
-            # print(actions_t_prey_2, action_samples_t_prey_2, values_t_prey_2)
+
+            print(values_t)
+            print("-----------------------------------")
+            print(values_t_prey_2)
+            
             print("wwwwwwwwwweeeeeee")
             import sys
-
             sys.exit(1)
 
             # Sample action from a distribution

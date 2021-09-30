@@ -57,7 +57,6 @@ class ParallelPolicy:
     def __init__(
         self,
         policy_constructors: Dict[str, PolicyConstructor],
-        config,
     ):
         """The policies can be different but must use the same input and output interfaces.
 
@@ -84,7 +83,12 @@ class ParallelPolicy:
 
         self.closed = False
         self.policy_ids = policy_constructors.keys()
-        mp_ctx = mp.get_context()
+ 
+        # Fork is not a thread safe method
+        forkserver_available = 'forkserver' in mp.get_all_start_methods()
+        start_method = 'forkserver' if forkserver_available else 'spawn'
+        mp_ctx = mp.get_context(start_method)
+ 
         self.error_queue = mp_ctx.Queue()
         self.parent_pipes = {}
         self.processes = {}
@@ -95,7 +99,6 @@ class ParallelPolicy:
                 name=f"Worker-<{type(self).__name__}>-<{policy_id}>",
                 args=(
                     CloudpickleWrapper(policy_constructor),
-                    config,
                     child_pipe,
                     self._polling_period,
                 ),
@@ -132,13 +135,11 @@ class ParallelPolicy:
 
         for policy_id, states in dd_state.items():
             self.parent_pipes[policy_id].send(("act", states))
-
-        print("iside 2 --------------------")      
+  
         results = {
             policy_id: self.parent_pipes[policy_id].recv()
             for policy_id in dd_state.keys()
         }
-        print("iside 3 --------------------")
         self._raise_if_errors(results)
 
         actions_t = {}
@@ -246,7 +247,6 @@ class ParallelPolicy:
 
 def _worker(
     policy_constructor: CloudpickleWrapper,
-    config,
     pipe: mp.connection.Connection,
     polling_period: float = 0.1,
 ):
@@ -301,8 +301,7 @@ def _worker(
 
     try:
         # Construct the policy
-        # policy = policy_constructor()
-        policy = got_ppo.PPO(AgentType.PREDATOR.value, config)
+        policy = policy_constructor()
 
         # Policy setup complete
         pipe.send((None, True))
@@ -313,9 +312,7 @@ def _worker(
                 continue
             command, data = pipe.recv()
             if command == "act":
-                print("ENTERING INSIDE ACT IN LOOP --------------")
                 result = policy.act(data)
-                print("RETURNING AFTER ACT IN LOOP --------------")
                 pipe.send((result, True))
             elif command == "save":
                 policy.save(data)
