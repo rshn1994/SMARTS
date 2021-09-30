@@ -97,19 +97,19 @@ def main(config):
         policy_constructors=policy_constructors,
     )
 
-    def interrupt(*args):
-        nonlocal mode
-        if mode == Mode.TRAIN:
-            ppo_predator.save(-1)
-            ppo_prey.save(-1)
-            policies.save({AgentType.PREDATOR.value:-1, AgentType.PREY.value:-1})
-        policies.close()
-        env.close()
-        print("Interrupt key detected.")
-        sys.exit(0)
+    # def interrupt(*args):
+    #     nonlocal mode
+    #     if mode == Mode.TRAIN:
+    #         ppo_predator.save(-1)
+    #         ppo_prey.save(-1)
+    #         policies.save({AgentType.PREDATOR.value:-1, AgentType.PREY.value:-1})
+    #     policies.close()
+    #     env.close()
+    #     print("Interrupt key detected.")
+    #     sys.exit(0)
 
-    # Catch keyboard interrupt and terminate signal
-    signal.signal(signal.SIGINT, interrupt)
+    # # Catch keyboard interrupt and terminate signal
+    # signal.signal(signal.SIGINT, interrupt)
 
     print("[INFO] Batch loop")
     states_t = env.reset()
@@ -146,14 +146,15 @@ def main(config):
             values_t.update(values_t_predator)
             values_t.update(values_t_prey)
 
-            print("second attempt rytiririririr")
-            actions_t_prey_2, action_samples_t_prey_2, values_t_prey_2 = policies.act(states_t)
-
+            _, _, values_t_prey_2 = policies.act(states_t)
+            print("-----------------------------------")
+            print("Sequentially processed")
             print(values_t)
             print("-----------------------------------")
+            print("Multiprocessed")
             print(values_t_prey_2)
-            
-            print("wwwwwwwwwweeeeeee")
+            print("\n\n")      
+
             import sys
             sys.exit(1)
 
