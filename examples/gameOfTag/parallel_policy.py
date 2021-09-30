@@ -28,6 +28,7 @@ tf.random.set_seed(123)
 # --------------------------------------------------------------------------
 
 import multiprocessing as mp
+import numpy as np
 import sys
 import warnings
 
@@ -35,7 +36,7 @@ from examples.gameOfTag.types import AgentType
 from collections import defaultdict
 from ppo import RL
 from smarts.env.utils.cloud_pickle import CloudpickleWrapper
-from typing import Any, Callable, DefaultDict, Dict, Tuple
+from typing import Any, Callable, Dict, Tuple
 
 
 __all__ = ["ParallelPolicy"]
@@ -245,6 +246,42 @@ class ParallelPolicy:
             self.close()
 
 
+# def _train(
+#     num_train_epochs: int,
+#     agents: List[got_agent.TagAgent],
+#     rl_algo: got_ppo.PPO,
+#     ent_discount_val: float,
+#     clip_value: float,
+#     critic_loss_weight: float,
+# ):
+
+#     total_loss = np.zeros((num_train_epochs))
+#     actor_loss = np.zeros((num_train_epochs))
+#     critic_loss = np.zeros(((num_train_epochs)))
+#     entropy_loss = np.zeros((num_train_epochs))
+
+#     for epoch in range(num_train_epochs):
+#         for agent in agents:
+#             loss_tuple = got_ppo.train_model(
+#                 model=rl_algo.model,
+#                 optimizer=rl_algo.optimizer,
+#                 action_inds=agent.action_inds,
+#                 old_probs=tf.gather_nd(agent.probs_softmax, agent.action_inds),
+#                 states=agent.states,
+#                 advantages=agent.advantages,
+#                 discounted_rewards=agent.discounted_rewards,
+#                 ent_discount_val=ent_discount_val,
+#                 clip_value=clip_value,
+#                 critic_loss_weight=critic_loss_weight,
+#             )
+#             total_loss[epoch] += loss_tuple[0]
+#             actor_loss[epoch] += loss_tuple[1]
+#             critic_loss[epoch] += loss_tuple[2]
+#             entropy_loss[epoch] += loss_tuple[3]
+
+#     return total_loss, actor_loss, critic_loss, entropy_loss
+
+
 def _worker(
     policy_constructor: CloudpickleWrapper,
     pipe: mp.connection.Connection,
@@ -258,46 +295,6 @@ def _worker(
         pipe (mp.connection.Connection): Child's end of the pipe.
         polling_period (float): Time to wait for keyboard interrupts.
     """
-
-    import os
-
-    # Set pythonhashseed
-    os.environ["PYTHONHASHSEED"] = "0"
-    # Silence the logs of TF
-    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-
-    # The below is necessary for starting Numpy generated random numbers
-    # in a well-defined initial state.
-    import numpy as np
-
-    np.random.seed(123)
-
-    # The below is necessary for starting core Python generated random numbers
-    # in a well-defined state.
-    import random as python_random
-
-    python_random.seed(123)
-
-    # The below set_seed() will make random number generation
-    # in the TensorFlow backend have a well-defined initial state.
-    # For further details, see:
-    # https://www.tensorflow.org/api_docs/python/tf/random/set_seed
-    import tensorflow as tf
-
-    tf.random.set_seed(123)
-
-    # --------------------------------------------------------------------------
-    import absl.logging
-    import tensorflow_probability as tfp
-
-    from datetime import datetime
-    from examples.gameOfTag import ppo as got_ppo
-    from pathlib import Path
-    from typing import Any, Dict, List, Tuple
-
-    # Suppress warning
-    absl.logging.set_verbosity(absl.logging.ERROR)
-
 
     try:
         # Construct the policy

@@ -153,12 +153,9 @@ class PPO(RL):
         # function due to order of sampling by `actions_dist_t.sample()`.
         for vehicle, state in ordered_obs:
             if self.name in vehicle:
-                print(vehicle,"name matched -----------------")
-                print(type(state), state.shape, "---------------")
-                actions_t, values_t = self.model(
+                actions_t, values_t = self.model.predict_on_batch(
                     np.expand_dims(state, axis=0)
                 )
-                print("After actions_t !!!!!!!!!!!!!!!")
                 actions_dist_t = tfp.distributions.Categorical(logits=actions_t)
 
                 actions[vehicle] = tf.squeeze(actions_t, axis=0)
