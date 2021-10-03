@@ -17,17 +17,17 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+
+import logging
+import smarts
 import warnings
 
-import numpy as np
 from ray.rllib.env.multi_agent_env import MultiAgentEnv
-import logging
-from smarts.core.utils.logging import timeit
-import smarts
 from envision.client import Client as Envision
 from smarts.core.scenario import Scenario
 from smarts.core.smarts import SMARTS
 from smarts.core.sumo_traffic_simulation import SumoTrafficSimulation
+from smarts.core.utils.logging import timeit
 
 
 class RLlibHiWayEnv(MultiAgentEnv):
@@ -202,14 +202,14 @@ class RLlibHiWayEnv(MultiAgentEnv):
 
         sim = SMARTS(
             agent_interfaces=agent_interfaces,
-            traffic_sim=SumoTrafficSimulation(
-                headless=self._sumo_headless,
-                time_resolution=self._fixed_timestep_sec,
-                num_external_sumo_clients=self._num_external_sumo_clients,
-                sumo_port=self._sumo_port,
-                auto_start=self._sumo_auto_start,
-                endless_traffic=self._endless_traffic,
-            ),
+            # traffic_sim=SumoTrafficSimulation(
+            #     headless=self._sumo_headless,
+            #     time_resolution=self._fixed_timestep_sec,
+            #     num_external_sumo_clients=self._num_external_sumo_clients,
+            #     sumo_port=self._sumo_port,
+            #     auto_start=self._sumo_auto_start,
+            #     endless_traffic=self._endless_traffic,
+            # ),
             envision=envision,
             fixed_timestep_sec=self._fixed_timestep_sec,
         )
