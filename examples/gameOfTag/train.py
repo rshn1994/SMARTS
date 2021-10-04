@@ -43,7 +43,13 @@ from pathlib import Path
 from typing import Dict, List
 
 
-def main(config):
+from ray import tune
+from ray.rllib.agents.ppo import PPOTrainer
+
+
+
+
+def main23(config):
 
     print("[INFO] Train")
     # Save and eval interval
@@ -342,6 +348,13 @@ def main(config):
     # Close policies and env
     policies.close()
     env.close()
+
+
+def main(config):
+
+    
+
+    print("Hiji")
 
 
 if __name__ == "__main__":
