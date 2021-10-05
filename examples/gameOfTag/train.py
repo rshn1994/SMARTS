@@ -1,36 +1,35 @@
-import os
+# import os
 
-# Set pythonhashseed
-os.environ["PYTHONHASHSEED"] = "0"
-# Silence the logs of TF
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+# # Set pythonhashseed
+# os.environ["PYTHONHASHSEED"] = "0"
+# # Silence the logs of TF
+# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
-# The below is necessary for starting Numpy generated random numbers
-# in a well-defined initial state.
-import numpy as np
+# # The below is necessary for starting Numpy generated random numbers
+# # in a well-defined initial state.
+# import numpy as np
 
-np.random.seed(123)
+# np.random.seed(123)
 
-# The below is necessary for starting core Python generated random numbers
-# in a well-defined state.
-import random as python_random
+# # The below is necessary for starting core Python generated random numbers
+# # in a well-defined state.
+# import random as python_random
 
-python_random.seed(123)
+# python_random.seed(123)
 
-# The below set_seed() will make random number generation
-# in the TensorFlow backend have a well-defined initial state.
-# For further details, see:
-# https://www.tensorflow.org/api_docs/python/tf/random/set_seed
-import tensorflow as tf
+# # The below set_seed() will make random number generation
+# # in the TensorFlow backend have a well-defined initial state.
+# # For further details, see:
+# # https://www.tensorflow.org/api_docs/python/tf/random/set_seed
+# import tensorflow as tf
 
-tf.random.set_seed(123)
-
+# tf.random.set_seed(123)
 # --------------------------------------------------------------------------
 
+import argparse
 import multiprocessing as mp
-import signal
-import sys
-import warnings
+import ray
+import os
 import yaml
 
 from enum import Enum
@@ -38,15 +37,24 @@ from examples.gameOfTag import env as got_env
 from examples.gameOfTag import agent as got_agent
 from examples.gameOfTag import ppo as got_ppo
 from examples.gameOfTag.types import AgentType, Mode
-from parallel_policy import ParallelPolicy
 from pathlib import Path
+from ray import tune
+from ray.rllib.agents.dqn.distributional_q_tf_model import \
+    DistributionalQTFModel
+from ray.rllib.agents.ppo import PPOTrainer
+from ray.rllib.models import ModelCatalog
+from ray.rllib.models.tf.misc import normc_initializer
+from ray.rllib.models.tf.tf_modelv2 import TFModelV2
+from ray.rllib.models.tf.visionnet import VisionNetwork as MyVisionNetwork
+from ray.rllib.policy.sample_batch import DEFAULT_POLICY_ID
+from ray.rllib.utils.framework import try_import_tf
+from ray.rllib.utils.metrics.learner_info import LEARNER_INFO, \
+    LEARNER_STATS_KEY
+from smarts.env.rllib_hiway_env import RLlibHiWayEnv
 from typing import Dict, List
 
 
-from ray import tune
-from ray.rllib.agents.ppo import PPOTrainer
-
-
+tf1, tf, tfv = try_import_tf()
 
 
 def main23(config):
@@ -54,7 +62,6 @@ def main23(config):
     print("[INFO] Train")
     # Save and eval interval
     save_interval = config["model_para"].get("save_interval", 50)
-    eval_interval = config["model_para"].get("eval_interval", 50)
 
     # Mode: Evaluation or Testing
     mode = Mode(config["model_para"]["mode"])
@@ -350,38 +357,70 @@ def main23(config):
     env.close()
 
 
-def main(config):
-
-    
-
-    print("Hiji")
-
-
 if __name__ == "__main__":
     config_yaml = (Path(__file__).absolute().parent).joinpath("got.yaml")
     with open(config_yaml, "r") as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
     # Setup GPU
-    gpus = tf.config.list_physical_devices("GPU")
-    if gpus:
-        try:
-            # Currently, memory growth needs to be the same across GPUs
-            for gpu in gpus:
-                tf.config.experimental.set_memory_growth(gpu, True)
-            logical_gpus = tf.config.list_logical_devices("GPU")
-            print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
-        except RuntimeError as e:
-            # Memory growth must be set before GPUs have been initialized
-            print(e)
-    else:
-        warnings.warn(
-            f"Not configured to use GPU or GPU not available.",
-            ResourceWarning,
-        )
-        # raise SystemError("GPU device not found")
+    # gpus = tf.config.list_physical_devices("GPU")
+    # if gpus:
+    #     try:
+    #         # Currently, memory growth needs to be the same across GPUs
+    #         for gpu in gpus:
+    #             tf.config.experimental.set_memory_growth(gpu, True)
+    #         logical_gpus = tf.config.list_logical_devices("GPU")
+    #         print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+    #     except RuntimeError as e:
+    #         # Memory growth must be set before GPUs have been initialized
+    #         print(e)
+    # else:
+    #     warnings.warn(
+    #         f"Not configured to use GPU or GPU not available.",
+    #         ResourceWarning,
+    #     )
+    #     # raise SystemError("GPU device not found")
 
-    # strategy = tf.distribute.MirroredStrategy()
-    # print("Number of devices: {}".format(strategy.num_replicas_in_sync))
 
-    main(config=config)
+    ray.init(num_cpus=mp.cpu_count()-2 or None)
+
+    tune.run(
+        args.run,
+        stop={"episode_reward_mean": args.stop},
+        config=dict(
+            extra_config,
+            **{
+                "env": "BreakoutNoFrameskip-v4"
+                if args.use_vision_network else "CartPole-v0",
+                # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
+                "num_gpus": int(os.environ.get("RLLIB_NUM_GPUS", "0")),
+                "callbacks": {
+                    "on_train_result": check_has_custom_metric,
+                },
+                "model": {
+                    "custom_model": "keras_q_model"
+                    if args.run == "DQN" else "keras_model"
+                },
+                "framework": "tf",
+            }))
+
+    trainer = pg.PGAgent(
+        env=RLlibHiWayEnv, 
+        config={
+        "multiagent": {
+            "policies": {
+                # the first tuple value is None -> uses default policy
+                "car1": (None, car_obs_space, car_act_space, {"gamma": 0.85}),
+                "car2": (None, car_obs_space, car_act_space, {"gamma": 0.99}),
+                "traffic_light": (None, tl_obs_space, tl_act_space, {}),
+            },
+            "policy_mapping_fn":
+                lambda agent_id:
+                    "traffic_light"  # Traffic lights are always controlled by this policy
+                    if agent_id.startswith("traffic_light_")
+                    else random.choice(["car1", "car2"])  # Randomly choose from car policies
+        },
+    })
+
+
+    tune.run(PPOTrainer, config={"env": "CartPole-v0", "train_batch_size": 4000})
