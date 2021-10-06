@@ -84,12 +84,12 @@ class ParallelPolicy:
 
         self.closed = False
         self.policy_ids = policy_constructors.keys()
- 
+
         # Fork is not a thread safe method
-        forkserver_available = 'forkserver' in mp.get_all_start_methods()
-        start_method = 'forkserver' if forkserver_available else 'spawn'
+        forkserver_available = "forkserver" in mp.get_all_start_methods()
+        start_method = "forkserver" if forkserver_available else "spawn"
         mp_ctx = mp.get_context(start_method)
- 
+
         self.error_queue = mp_ctx.Queue()
         self.parent_pipes = {}
         self.processes = {}
@@ -120,12 +120,16 @@ class ParallelPolicy:
         self._raise_if_errors(results)
 
     @staticmethod
-    def _agent_to_policy_id(agent_id:str, policy_ids)->str:
+    def _agent_to_policy_id(agent_id: str, policy_ids) -> str:
         ids = [policy_id for policy_id in policy_ids if policy_id in agent_id]
         if len(ids) == 0:
-            raise KeyError(f"Agent_id {agent_id} does not match any policy ids {policy_ids}.")
+            raise KeyError(
+                f"Agent_id {agent_id} does not match any policy ids {policy_ids}."
+            )
         if len(ids) > 1:
-            raise KeyError(f"Agent_id {agent_id} matches multiple policy ids {policy_ids}.")
+            raise KeyError(
+                f"Agent_id {agent_id} matches multiple policy ids {policy_ids}."
+            )
         return ids[0]
 
     def act(self, states_t: Dict[str, Any]) -> Dict[str, Any]:
@@ -136,7 +140,7 @@ class ParallelPolicy:
 
         for policy_id, states in dd_state.items():
             self.parent_pipes[policy_id].send(("act", states))
-  
+
         results = {
             policy_id: self.parent_pipes[policy_id].recv()
             for policy_id in dd_state.keys()
@@ -154,7 +158,6 @@ class ParallelPolicy:
 
         return actions_t, action_samples_t, values_t
 
-
     def train(self, states: Dict[str, Any]) -> Dict[str, Any]:
         # for agent_id, states_t in states.items():
         #     policy_id = self._agent_to_policy_id(agent_id)
@@ -167,7 +170,6 @@ class ParallelPolicy:
         # self._raise_if_errors(results)
 
         return
-
 
     def save(self, versions: Dict[str, int]):
         """Save the current policy.
