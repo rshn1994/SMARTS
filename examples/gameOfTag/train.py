@@ -29,6 +29,7 @@
 import argparse
 import gym
 import multiprocessing as mp
+import numpy as np
 import ray
 import os
 import yaml
@@ -59,6 +60,136 @@ from typing import Dict, List
 
 
 tf1, tf, tfv = try_import_tf()
+
+
+def info_adapter(obs, reward, info):
+    return reward
+
+
+def action_adapter(model_action):
+    throttle, brake, steering = model_action
+    # Modify action space limits
+    throttle = (throttle + 1) / 2
+    brake = (brake + 1) / 2
+    # steering = steering
+    return np.array([throttle, brake, steering], dtype=np.float32)
+
+
+def observation_adapter(obs) -> np.ndarray:
+    # RGB grid map
+    rgb = obs.top_down_rgb.data
+
+    # Replace self color to yellow
+    coloured_self = rgb.copy()
+    coloured_self[123:132, 126:130, 0] = 255
+    coloured_self[123:132, 126:130, 1] = 190
+    coloured_self[123:132, 126:130, 2] = 40
+
+    # Convert rgb to grayscale image
+    grayscale = rgb2gray(coloured_self)
+
+    # Center frames
+    frame = grayscale * 2 - 1
+    frame = frame.astype(np.float32)
+
+    # Plot graph
+    # fig, axes = plt.subplots(1, 4, figsize=(10, 10))
+    # ax = axes.ravel()
+    # ax[0].imshow(rgb)
+    # ax[0].set_title("RGB")
+    # ax[1].imshow(coloured_self)
+    # ax[1].set_title("Coloured self - yellow")
+    # ax[2].imshow(grayscale, cmap=plt.cm.gray)
+    # ax[2].set_title("Grayscale")
+    # ax[3].imshow(frame)
+    # ax[3].set_title("Centered")
+    # fig.tight_layout()
+    # plt.show()
+    # sys.exit(2)
+
+    return frame
+
+
+def get_targets(vehicles, target: str):
+    target_vehicles = [vehicle for vehicle in vehicles if target in vehicle.id]
+    return target_vehicles
+
+
+def predator_reward_adapter(obs, env_reward):
+    reward = 0
+    ego = obs.ego_vehicle_state
+
+    # Penalty for driving off road
+    if obs.events.off_road:
+        reward -= 5
+        return np.float32(reward)
+
+    # Distance based reward
+    targets = get_targets(obs.neighborhood_vehicle_states, "prey")
+    if targets:
+        # distances = distance_to_targets(ego, targets)
+        # min_distance = np.amin(distances)
+        # dist_reward = exponential_negative(min_distance)
+        # dist_reward = inverse(min_distance)
+        # reward += np.clip(dist_reward, 0, 55) / 20  # Reward [0:275]
+        reward += 1
+    else:  # No neighborhood preys
+        #     reward -= 1
+        pass
+
+    # Reward for colliding
+    for c in obs.events.collisions:
+        if "prey" in c.collidee_id:
+            reward += 5
+            print(f"Predator {ego.id} collided with prey vehicle {c.collidee_id}.")
+        else:
+            reward -= 5
+            print(f"Predator {ego.id} collided with predator vehicle {c.collidee_id}.")
+
+    # Penalty for not moving
+    # if obs.events.not_moving:
+    # reward -= 2
+
+    return np.float32(reward)
+
+
+def prey_reward_adapter(obs, env_reward):
+    reward = 0
+    ego = obs.ego_vehicle_state
+
+    # Penalty for driving off road
+    if obs.events.off_road:
+        reward -= 5
+        return np.float32(reward)
+
+    # Distance based reward
+    targets = get_targets(obs.neighborhood_vehicle_states, "predator")
+    if targets:
+        # distances = distance_to_targets(ego, targets)
+        # ave_distance = np.average(distances)
+        # dist_reward = exponential_positive(ave_distance)
+        # dist_reward = linear(ave_distance)
+        # reward += np.clip(dist_reward, 0, 55) / 20  # Reward [0:275]
+        reward -= 1
+    else:  # No neighborhood predators
+        # reward += 1
+        pass
+
+    # Penalty for colliding
+    for c in obs.events.collisions:
+        if "predator" in c.collidee_id:
+            reward -= 5
+            print(f"Prey {ego.id} collided with predator vehicle {c.collidee_id}.")
+        else:
+            reward -= 5
+            print(f"Prey {ego.id} collided with prey vehicle {c.collidee_id}.")
+
+    # Penalty for not moving
+    # if obs.events.not_moving:
+    #     reward -= 2
+
+    return np.float32(reward)
+
 
 
 # def main23(config):
@@ -345,7 +476,7 @@ if __name__ == "__main__":
             agents_alive=smarts_agent_interface.AgentsAliveDoneCriteria(
                 agent_lists_alive=[
                     smarts_agent_interface.AgentsListAlive(
-                        agents_list=self.preys, minimum_agents_alive_in_list=1
+                        agents_list=preys, minimum_agents_alive_in_list=1
                     ),
                 ]
             ),
@@ -355,10 +486,10 @@ if __name__ == "__main__":
     prey_interface = smarts_agent_interface.AgentInterface(
         max_episode_steps=config["env_para"]["max_episode_steps"],
         neighborhood_vehicles=smarts_agent_interface.NeighborhoodVehicles(
-            radius=self.neighborhood_radius
+            radius=neighborhood_radius
         ),
         rgb=smarts_agent_interface.RGB(
-            width=256, height=256, resolution=self.rgb_wh / 256
+            width=256, height=256, resolution=rgb_wh / 256
         ),
         vehicle_color="White",
         action=getattr(smarts_controllers.ActionSpaceType, "Continuous"),
@@ -372,7 +503,7 @@ if __name__ == "__main__":
             agents_alive=smarts_agent_interface.AgentsAliveDoneCriteria(
                 agent_lists_alive=[
                     smarts_agent_interface.AgentsListAlive(
-                        agents_list=self.predators, minimum_agents_alive_in_list=1
+                        agents_list=predators, minimum_agents_alive_in_list=1
                     ),
                 ]
             ),
@@ -386,7 +517,7 @@ if __name__ == "__main__":
             agent_builder=got_agent.TagAgent,
             observation_adapter=observation_adapter,
             reward_adapter=predator_reward_adapter,
-            action_adapter=action_adapter(self.controller),
+            action_adapter=action_adapter,
             info_adapter=info_adapter,
         )
         if "predator" in agent_id
@@ -395,7 +526,7 @@ if __name__ == "__main__":
             agent_builder=got_agent.TagAgent,
             observation_adapter=observation_adapter,
             reward_adapter=prey_reward_adapter,
-            action_adapter=action_adapter(self.controller),
+            action_adapter=action_adapter,
             info_adapter=info_adapter,
         )
         for agent_id in config["env_para"]["agent_ids"]
@@ -465,3 +596,5 @@ if __name__ == "__main__":
             "callbacks": Callbacks,
         }
     )
+
+
