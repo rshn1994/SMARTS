@@ -1,5 +1,5 @@
 env_para:
-  env_name: SMARTS
+  env_name: smarts
   seed: 42
   headless: True
   visdom: False
@@ -8,7 +8,6 @@ env_para:
   max_episode_steps: 1800 # 3 minutes. Maximum steps per episode.
   agent_ids: 
     - predator1
-  controller: Categorical
   scenarios: 
     - /home/kyber/workspaces/SMARTS/scenarios/cloverleaf
     # - /home/a84166141/workspaces/SMARTS/scenarios/cloverleaf
@@ -17,7 +16,7 @@ env_para:
 
 model_para:
   # Observation and action space
-  state_dim: [256, 256, 3]
+  state_dim: [256, 256, 6]
   action_dim: 5
   
   # Optimizer

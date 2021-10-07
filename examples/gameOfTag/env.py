@@ -2,33 +2,12 @@ import gym
 import matplotlib.pyplot as plt
 import numpy as np
 
-from skimage.color import rgb2gray
 from smarts.core import agent as smarts_agent
 from smarts.core import agent_interface as smarts_agent_interface
 from smarts.core import controllers as smarts_controllers
-from smarts.core.agent import Agent
-from smarts.core.sensors import Observation
 from smarts.env import hiway_env as smarts_hiway_env
 from smarts.env.wrappers import frame_stack as smarts_frame_stack
-from typing import Dict, List
-
-
-class SingleAgent(Agent):
-    def act(self, obs: Observation):
-        if (
-            len(obs.via_data.near_via_points) < 1
-            or obs.ego_vehicle_state.edge_id != obs.via_data.near_via_points[0].edge_id
-        ):
-            return (obs.waypoint_paths[0][0].speed_limit, 0)
-
-        nearest = obs.via_data.near_via_points[0]
-        if nearest.lane_index == obs.ego_vehicle_state.lane_index:
-            return (nearest.required_speed, 0)
-
-        return (
-            nearest.required_speed,
-            1 if nearest.lane_index > obs.ego_vehicle_state.lane_index else -1,
-        )
+from typing import List
 
 
 class SingleEnv(gym.Wrapper):
@@ -75,16 +54,16 @@ class SingleEnv(gym.Wrapper):
             seed=config["env_para"]["seed"],
         )
         # Wrap env with FrameStack to stack multiple observations
-        env = smarts_frame_stack.FrameStack(env=env, num_stack=9, num_skip=4)
+        env = smarts_frame_stack.FrameStack(env=env, num_stack=5, num_skip=4)
 
         super(SingleEnv, self).__init__(env)
 
         # Set action space and observation space
         self.action_space = gym.spaces.Box(
-            np.array([-1, -1, -1]), np.array([+1, +1, +1]), dtype=np.float32
+            low=np.array([-1.0, -1.0, -1.0]), high=np.array([+1.0, +1.0, +1.0]), dtype=np.float32
         )  # throttle, break, steering
         self.observation_space = gym.spaces.Box(
-            low=-1, high=1, shape=(256, 256, 3), dtype=np.float32
+            low=0, high=255, shape=(256, 256, 6), dtype=np.uint8
         )
 
     def reset(self) -> np.ndarray:
@@ -166,11 +145,12 @@ def observation_adapter(obs) -> np.ndarray:
     coloured_self[123:132, 126:130, 2] = 40
 
     # Convert rgb to grayscale image
-    grayscale = rgb2gray(coloured_self)
+    # grayscale = rgb2gray(coloured_self)
 
     # Center frames
-    frame = grayscale * 2 - 1
-    frame = frame.astype(np.float32)
+    # frame = grayscale * 2 - 1
+    frame = coloured_self.astype(np.uint8)
+    print(type(frame),"frame type -------------------")
 
     # Plot graph
     # fig, axes = plt.subplots(1, 4, figsize=(10, 10))
