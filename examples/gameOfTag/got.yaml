@@ -37,7 +37,6 @@ model_para:
 
   # Models and logs
   save_interval: 50
-  eval_interval: 50
   mode: train # train or evaluate
   model_initial: false
   # Local

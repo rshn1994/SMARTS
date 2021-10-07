@@ -15,6 +15,7 @@ class SingleEnv(gym.Wrapper):
         self.config = config
         self.agent_id = config["env_para"]["agent_ids"][0]
 
+        # Agent interface
         agent_interface = smarts_agent_interface.AgentInterface(
             max_episode_steps=config["env_para"]["max_episode_steps"],
             neighborhood_vehicles=smarts_agent_interface.NeighborhoodVehicles(
@@ -35,6 +36,7 @@ class SingleEnv(gym.Wrapper):
             ),
         )
 
+        # Agent specs
         agent_specs = {
             self.agent_id: smarts_agent.AgentSpec(
                 interface=agent_interface,
@@ -46,6 +48,7 @@ class SingleEnv(gym.Wrapper):
             )
         }
 
+        # HiWayEnv
         env = smarts_hiway_env.HiWayEnv(
             scenarios=config["env_para"]["scenarios"],
             agent_specs=agent_specs,
@@ -53,15 +56,18 @@ class SingleEnv(gym.Wrapper):
             visdom=config["env_para"]["visdom"],
             seed=config["env_para"]["seed"],
         )
+
         # Wrap env with FrameStack to stack multiple observations
         env = smarts_frame_stack.FrameStack(env=env, num_stack=5, num_skip=4)
 
+        # Initialize base env
         super(SingleEnv, self).__init__(env)
 
-        # Set action space and observation space
+        # Action space
         self.action_space = gym.spaces.Box(
-            low=np.array([-1.0, -1.0, -1.0]), high=np.array([+1.0, +1.0, +1.0]), dtype=np.float
-        )  # throttle, break, steering
+            low=-1.0, high=1.0, shape=(3,), dtype=np.float
+        )
+        # Observation space
         self.observation_space = gym.spaces.Box(
             low=0, high=255, shape=(256, 256, 6), dtype=np.uint8
         )
@@ -77,9 +83,8 @@ class SingleEnv(gym.Wrapper):
 
         return states[self.agent_id]
 
-
     def step(self, action):
-        raw_states, rewards, dones, infos = self.env.step({self.agent_id:action})
+        raw_states, rewards, dones, infos = self.env.step({self.agent_id: action})
 
         # Stack observation into 3D numpy matrix
         states = {
@@ -99,7 +104,12 @@ class SingleEnv(gym.Wrapper):
         #         plt.imshow(img)
         # plt.show()
 
-        return states[self.agent_id], rewards[self.agent_id], dones[self.agent_id], infos[self.agent_id]
+        return (
+            states[self.agent_id],
+            rewards[self.agent_id],
+            dones[self.agent_id],
+            infos[self.agent_id],
+        )
 
     def close(self):
         if self.env is not None:
@@ -169,6 +179,7 @@ def observation_adapter(obs) -> np.ndarray:
 
     return frame
 
+
 def reward_adapter(obs, env_reward):
     reward = 0
     ego = obs.ego_vehicle_state
@@ -179,7 +190,7 @@ def reward_adapter(obs, env_reward):
         print(f"Vehicle {ego.id} went off road.")
         return np.float(reward)
 
-     # Reward for colliding
+    # Reward for colliding
     for c in obs.events.collisions:
         reward -= 30
         print(f"Vehicle {ego.id} collided with vehicle {c.collidee_id}.")

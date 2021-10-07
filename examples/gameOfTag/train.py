@@ -25,26 +25,24 @@ def main(config):
     ent_discount_val = config["model_para"]["entropy_loss_weight"]
     ent_discount_rate = config["model_para"]["entropy_loss_discount_rate"]
     seed = config["env_para"]["seed"]
-    
+
     env = got_env.SingleEnv(config)
 
     # Model
     model_path = Path(config["model_para"]["model_path"]).joinpath(
         f"{name}_{datetime.now().strftime('%Y_%m_%d_%H_%M')}"
     )
-    print(model_path," --------")
+    print(model_path, " --------")
     # # Tensorboard
     # path = Path(config["model_para"]["tensorboard_path"]).joinpath(
     #     f"{name}_{datetime.now().strftime('%Y_%m_%d_%H_%M')}"
     # )
     # tb = tf.summary.create_file_writer(str(path))
 
-
     # SB3 environments
     # env = make_vec_env("CartPole-v1", n_envs=4)
 
     env_checker.check_env(env)
-
 
     model = PPO("CnnPolicy", env, verbose=1)
 
@@ -65,9 +63,10 @@ def main(config):
 
     print("completed training ??????????????????????")
     import time
+
     time.sleep(834)
 
-    del model # remove to demonstrate saving and loading
+    del model  # remove to demonstrate saving and loading
 
     model = PPO.load(model_path)
 
@@ -79,7 +78,6 @@ def main(config):
 
     # Close env
     env.close()
-
 
 
 if __name__ == "__main__":
@@ -107,4 +105,3 @@ if __name__ == "__main__":
     #     # raise SystemError("GPU device not found")
 
     main(config)
-
