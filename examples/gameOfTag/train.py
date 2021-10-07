@@ -43,8 +43,10 @@ def main(config):
     # env = make_vec_env("CartPole-v1", n_envs=4)
 
     env_checker.check_env(env)
+    print("completed environment checker ??????????????????????")
 
     model = PPO("CnnPolicy", env, verbose=1)
+    print("completed model instantiation ??????????????????????")
 
     def interrupt(*args):
         nonlocal mode
@@ -70,11 +72,11 @@ def main(config):
 
     model = PPO.load(model_path)
 
-    obs = env.reset()
-    while True:
-        action, _states = model.predict(obs)
-        obs, rewards, dones, info = env.step(action)
-        env.render()
+    # obs = env.reset()
+    # while True:
+    #     action, _states = model.predict(obs)
+    #     obs, rewards, dones, info = env.step(action)
+    #     env.render()
 
     # Close env
     env.close()

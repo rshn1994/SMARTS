@@ -92,17 +92,22 @@ class SingleEnv(gym.Wrapper):
             for agent_id, raw_state in raw_states.items()
         }
 
+        print(type(states[self.agent_id]),";;;;;;;;;;;;;;;;;;;;;;;")
+        print(states[self.agent_id].shape,";;;;;;;;;;;;;;;;;;;;;;;")
+
         # Plot for debugging purposes
-        # import matplotlib.pyplot as plt
-        # fig=plt.figure(figsize=(10,10))
-        # columns = 3
-        # rows = len(states.keys())
-        # for row, (agent_id, state) in enumerate(states.items()):
-        #     for col in range(0, columns):
-        #         img = state[:,:,col]
-        #         fig.add_subplot(rows, columns, row*columns + col + 1)
-        #         plt.imshow(img)
-        # plt.show()
+        import matplotlib.pyplot as plt
+        columns = 2
+        n_states = len(raw_states.keys())
+        fig, axes = plt.subplots(1, n_states*columns, figsize=(10, 10))
+        fig.tight_layout()
+        ax = axes.ravel()
+        for row, (agent_id, state) in enumerate(states.items()):
+            for col in range(columns):
+                img = state[:,:,col:col+3]
+                ax[row*2+col+1].imshow(img)
+                ax[row*2+col+1].set_title(agent_id)
+        plt.show()
 
         return (
             states[self.agent_id],
@@ -141,7 +146,6 @@ def action_adapter(model_action):
     # Modify action space limits
     throttle = (throttle + 1) / 2
     brake = (brake + 1) / 2
-    # steering = steering
     return np.array([throttle, brake, steering], dtype=np.float)
 
 
@@ -151,16 +155,18 @@ def observation_adapter(obs) -> np.ndarray:
 
     # Replace self color to yellow
     coloured_self = rgb.copy()
-    coloured_self[123:132, 126:130, 0] = 255
-    coloured_self[123:132, 126:130, 1] = 190
-    coloured_self[123:132, 126:130, 2] = 40
+    # coloured_self[123:132, 126:130, 0] = 255
+    # coloured_self[123:132, 126:130, 1] = 190
+    # coloured_self[123:132, 126:130, 2] = 40
 
     # Convert rgb to grayscale image
     # grayscale = rgb2gray(coloured_self)
 
     # Center frames
     # frame = grayscale * 2 - 1
+    print(type(coloured_self[0][0][0]), " coloured_self type in python 00000000000000000000000")
     frame = coloured_self.astype(np.uint8)
+    print(type(frame[0][0][0]), " frame type in python 00000000000000000000000")
 
     # Plot graph
     # fig, axes = plt.subplots(1, 4, figsize=(10, 10))
