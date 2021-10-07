@@ -98,15 +98,16 @@ class SingleEnv(gym.Wrapper):
         # Plot for debugging purposes
         import matplotlib.pyplot as plt
         columns = 2
+        rgb_gray = 3 # 3 for rgb and 1 for grayscale
         n_states = len(raw_states.keys())
         fig, axes = plt.subplots(1, n_states*columns, figsize=(10, 10))
         fig.tight_layout()
         ax = axes.ravel()
         for row, (agent_id, state) in enumerate(states.items()):
             for col in range(columns):
-                img = state[:,:,col:col+3]
-                ax[row*2+col].imshow(img)
-                ax[row*2+col].set_title(agent_id)
+                img = state[:,:,rgb_gray*col:rgb_gray*col+rgb_gray]
+                ax[row*columns+col].imshow(img)
+                ax[row*columns+col].set_title(agent_id)
         plt.show()
 
         return (
@@ -169,18 +170,18 @@ def observation_adapter(obs) -> np.ndarray:
     print(type(frame[0][0][0]), " frame type in python 00000000000000000000000")
 
     # Plot graph
-    # fig, axes = plt.subplots(1, 4, figsize=(10, 10))
-    # ax = axes.ravel()
-    # ax[0].imshow(rgb)
-    # ax[0].set_title("RGB")
-    # ax[1].imshow(coloured_self)
-    # ax[1].set_title("Coloured self - yellow")
+    fig, axes = plt.subplots(1, 4, figsize=(10, 10))
+    ax = axes.ravel()
+    ax[0].imshow(rgb)
+    ax[0].set_title("RGB")
+    ax[1].imshow(coloured_self)
+    ax[1].set_title("Coloured self - yellow")
     # ax[2].imshow(grayscale, cmap=plt.cm.gray)
-    # ax[2].set_title("Grayscale")
-    # ax[3].imshow(frame)
-    # ax[3].set_title("Centered")
-    # fig.tight_layout()
-    # plt.show()
+    ax[2].set_title("Grayscale")
+    ax[3].imshow(frame)
+    ax[3].set_title("Centered")
+    fig.tight_layout()
+    plt.show()
     # sys.exit(2)
 
     return frame
