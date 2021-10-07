@@ -34,7 +34,7 @@ class SingleAgent(Agent):
 
 
 class SingleEnv(gym.Wrapper):
-    def __init__(self, env: gym.Env, config):
+    def __init__(self, config):
         self.config = config
         self.neighborhood_radius = config["env_para"]["neighborhood_radius"]
         self.rgb_wh = config["env_para"]["rgb_wh"]
@@ -48,7 +48,7 @@ class SingleEnv(gym.Wrapper):
                 width=256, height=256, resolution=self.rgb_wh / 256
             ),
             vehicle_color="Blue",
-            action=getattr(smarts_controllers.ActionSpaceType, "Continuous"),
+            action=smarts_controllers.ActionSpaceType.Continuous,
             done_criteria=smarts_agent_interface.DoneCriteria(
                 collision=True,
                 off_road=True,
@@ -439,22 +439,6 @@ def distance_to_targets(ego, targets):
     return distances
 
 
-# def linear(x: float) -> float:
-#     return x
-
-
-# def inverse(x: float) -> float:
-#     return -x + 80
-
-
-# def exponential_negative(x: float) -> float:
-#     return 90 * np.exp(-0.028 * x)
-
-
-# def exponential_positive(x: float) -> float:
-#     return np.exp(0.056 * x)
-
-
 def predator_reward_adapter(obs, env_reward):
     reward = 0
     ego = obs.ego_vehicle_state
@@ -464,68 +448,10 @@ def predator_reward_adapter(obs, env_reward):
         reward -= 5
         return np.float32(reward)
 
-    # Distance based reward
-    targets = get_targets(obs.neighborhood_vehicle_states, "prey")
-    if targets:
-        # distances = distance_to_targets(ego, targets)
-        # min_distance = np.amin(distances)
-        # dist_reward = exponential_negative(min_distance)
-        # dist_reward = inverse(min_distance)
-        # reward += np.clip(dist_reward, 0, 55) / 20  # Reward [0:275]
-        reward += 1
-    else:  # No neighborhood preys
-        #     reward -= 1
-        pass
-
-    # Reward for colliding
+     # Reward for colliding
     for c in obs.events.collisions:
-        if "prey" in c.collidee_id:
-            reward += 5
-            print(f"Predator {ego.id} collided with prey vehicle {c.collidee_id}.")
-        else:
-            reward -= 5
-            print(f"Predator {ego.id} collided with predator vehicle {c.collidee_id}.")
-
-    # Penalty for not moving
-    # if obs.events.not_moving:
-    # reward -= 2
-
-    return np.float32(reward)
-
-
-def prey_reward_adapter(obs, env_reward):
-    reward = 0
-    ego = obs.ego_vehicle_state
-
-    # Penalty for driving off road
-    if obs.events.off_road:
         reward -= 5
+        print(f"Vehicle {ego.id} collided with vehicle {c.collidee_id}.")
         return np.float32(reward)
-
-    # Distance based reward
-    targets = get_targets(obs.neighborhood_vehicle_states, "predator")
-    if targets:
-        # distances = distance_to_targets(ego, targets)
-        # ave_distance = np.average(distances)
-        # dist_reward = exponential_positive(ave_distance)
-        # dist_reward = linear(ave_distance)
-        # reward += np.clip(dist_reward, 0, 55) / 20  # Reward [0:275]
-        reward -= 1
-    else:  # No neighborhood predators
-        # reward += 1
-        pass
-
-    # Penalty for colliding
-    for c in obs.events.collisions:
-        if "predator" in c.collidee_id:
-            reward -= 5
-            print(f"Prey {ego.id} collided with predator vehicle {c.collidee_id}.")
-        else:
-            reward -= 5
-            print(f"Prey {ego.id} collided with prey vehicle {c.collidee_id}.")
-
-    # Penalty for not moving
-    # if obs.events.not_moving:
-    #     reward -= 2
 
     return np.float32(reward)
