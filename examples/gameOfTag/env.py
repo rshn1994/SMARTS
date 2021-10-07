@@ -105,8 +105,8 @@ class SingleEnv(gym.Wrapper):
         for row, (agent_id, state) in enumerate(states.items()):
             for col in range(columns):
                 img = state[:,:,col:col+3]
-                ax[row*2+col+1].imshow(img)
-                ax[row*2+col+1].set_title(agent_id)
+                ax[row*2+col].imshow(img)
+                ax[row*2+col].set_title(agent_id)
         plt.show()
 
         return (
