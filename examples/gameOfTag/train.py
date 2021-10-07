@@ -1,75 +1,14 @@
-# import os
-
-# # Set pythonhashseed
-# os.environ["PYTHONHASHSEED"] = "0"
-# # Silence the logs of TF
-# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-
-# # The below is necessary for starting Numpy generated random numbers
-# # in a well-defined initial state.
-# import numpy as np
-
-# np.random.seed(123)
-
-# # The below is necessary for starting core Python generated random numbers
-# # in a well-defined state.
-# import random as python_random
-
-# python_random.seed(123)
-
-# # The below set_seed() will make random number generation
-# # in the TensorFlow backend have a well-defined initial state.
-# # For further details, see:
-# # https://www.tensorflow.org/api_docs/python/tf/random/set_seed
-# import tensorflow as tf
-
-# tf.random.set_seed(123)
-# --------------------------------------------------------------------------
-
-import argparse
-import gym
-import multiprocessing as mp
-import ray
-import os
 import sys
 import signal
 import yaml
 
 from datetime import datetime
-from enum import Enum
 from examples.gameOfTag import env as got_env
-from examples.gameOfTag import agent as got_agent
-from examples.gameOfTag import ppo as got_ppo
-from examples.gameOfTag.types import AgentType, Mode
+from examples.gameOfTag.types import Mode
 from pathlib import Path
-from ray import tune
-from ray.rllib.agents.dqn.distributional_q_tf_model import DistributionalQTFModel
-from ray.rllib.agents.ppo import PPOTrainer
-from ray.rllib.models import ModelCatalog
-from ray.rllib.models.tf.misc import normc_initializer
-from ray.rllib.models.tf.tf_modelv2 import TFModelV2
-from ray.rllib.models.tf.visionnet import VisionNetwork as MyVisionNetwork
-from ray.rllib.policy.sample_batch import DEFAULT_POLICY_ID
-from ray.rllib.utils.framework import try_import_tf
-from ray.rllib.utils.metrics.learner_info import LEARNER_INFO, LEARNER_STATS_KEY
-from smarts.env.rllib_hiway_env import RLlibHiWayEnv
-from smarts.core import agent as smarts_agent
-from smarts.core import agent_interface as smarts_agent_interface
-from smarts.core import controllers as smarts_controllers
-from smarts.env import hiway_env as smarts_hiway_env
-from smarts.env.wrappers import frame_stack as smarts_frame_stack
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
-from typing import Dict, List
 
-
-tf1, tf, tfv = try_import_tf()
-
-def _load(model_path):
-    return tf.keras.models.load_model(
-        model_path,
-        compile=False,
-    )
 
 def main(config):
 
