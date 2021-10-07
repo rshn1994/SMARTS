@@ -1,11 +1,13 @@
 import sys
 import signal
+import stable_baselines3 as sb3
 import yaml
 
 from datetime import datetime
 from examples.gameOfTag import env as got_env
 from examples.gameOfTag.types import Mode
 from pathlib import Path
+from stable_baselines3.common import env_checker
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 
@@ -30,15 +32,20 @@ def main(config):
     model_path = Path(config["model_para"]["model_path"]).joinpath(
         f"{name}_{datetime.now().strftime('%Y_%m_%d_%H_%M')}"
     )
-    # Tensorboard
-    path = Path(config["model_para"]["tensorboard_path"]).joinpath(
-        f"{name}_{datetime.now().strftime('%Y_%m_%d_%H_%M')}"
-    )
-    tb = tf.summary.create_file_writer(str(path))
+    print(model_path," --------")
+    # # Tensorboard
+    # path = Path(config["model_para"]["tensorboard_path"]).joinpath(
+    #     f"{name}_{datetime.now().strftime('%Y_%m_%d_%H_%M')}"
+    # )
+    # tb = tf.summary.create_file_writer(str(path))
 
 
     # SB3 environments
-    env = make_vec_env("CartPole-v1", n_envs=4)
+    # env = make_vec_env("CartPole-v1", n_envs=4)
+
+    env_checker.check_env(env)
+
+
     model = PPO("CnnPolicy", env, verbose=1)
 
     def interrupt(*args):
@@ -55,6 +62,10 @@ def main(config):
     # Train
     model.learn(total_timesteps=5)
     model.save(model_path)
+
+    print("completed training ??????????????????????")
+    import time
+    time.sleep(834)
 
     del model # remove to demonstrate saving and loading
 

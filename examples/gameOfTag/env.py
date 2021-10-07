@@ -60,7 +60,7 @@ class SingleEnv(gym.Wrapper):
 
         # Set action space and observation space
         self.action_space = gym.spaces.Box(
-            low=np.array([-1.0, -1.0, -1.0]), high=np.array([+1.0, +1.0, +1.0]), dtype=np.float32
+            low=np.array([-1.0, -1.0, -1.0]), high=np.array([+1.0, +1.0, +1.0]), dtype=np.float
         )  # throttle, break, steering
         self.observation_space = gym.spaces.Box(
             low=0, high=255, shape=(256, 256, 6), dtype=np.uint8
@@ -116,8 +116,9 @@ def stack_matrix(states: List[np.ndarray]) -> np.ndarray:
             f"Expected input numpy array with 2 or 3 dimensions, but received input with {states[0].ndim} dimensions."
         )
 
+
 def info_adapter(obs, reward, info):
-    return reward
+    return info
 
 
 def action_adapter(model_action):
@@ -131,7 +132,7 @@ def action_adapter(model_action):
     throttle = (throttle + 1) / 2
     brake = (brake + 1) / 2
     # steering = steering
-    return np.array([throttle, brake, steering], dtype=np.float32)
+    return np.array([throttle, brake, steering], dtype=np.float)
 
 
 def observation_adapter(obs) -> np.ndarray:
@@ -150,7 +151,6 @@ def observation_adapter(obs) -> np.ndarray:
     # Center frames
     # frame = grayscale * 2 - 1
     frame = coloured_self.astype(np.uint8)
-    print(type(frame),"frame type -------------------")
 
     # Plot graph
     # fig, axes = plt.subplots(1, 4, figsize=(10, 10))
@@ -177,15 +177,15 @@ def reward_adapter(obs, env_reward):
     if obs.events.off_road:
         reward -= 30
         print(f"Vehicle {ego.id} went off road.")
-        return np.float32(reward)
+        return np.float(reward)
 
      # Reward for colliding
     for c in obs.events.collisions:
         reward -= 30
         print(f"Vehicle {ego.id} collided with vehicle {c.collidee_id}.")
-        return np.float32(reward)
+        return np.float(reward)
 
     # Reward for staying on track
     reward += 1
 
-    return np.float32(reward)
+    return np.float(reward)
