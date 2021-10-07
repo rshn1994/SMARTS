@@ -50,6 +50,7 @@ from ray.rllib.models.tf.visionnet import VisionNetwork as MyVisionNetwork
 from ray.rllib.policy.sample_batch import DEFAULT_POLICY_ID
 from ray.rllib.utils.framework import try_import_tf
 from ray.rllib.utils.metrics.learner_info import LEARNER_INFO, LEARNER_STATS_KEY
+from skimage.color import rgb2gray
 from smarts.env.rllib_hiway_env import RLlibHiWayEnv
 from smarts.core import agent as smarts_agent
 from smarts.core import agent_interface as smarts_agent_interface
