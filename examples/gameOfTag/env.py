@@ -1,18 +1,17 @@
 import gym
 import matplotlib.pyplot as plt
 import numpy as np
-import time
 
-from examples.gameOfTag import agent as got_agent
 from skimage.color import rgb2gray
 from smarts.core import agent as smarts_agent
 from smarts.core import agent_interface as smarts_agent_interface
 from smarts.core import controllers as smarts_controllers
+from smarts.core.agent import Agent
+from smarts.core.sensors import Observation
 from smarts.env import hiway_env as smarts_hiway_env
 from smarts.env.wrappers import frame_stack as smarts_frame_stack
 from typing import Dict, List
-from smarts.core.agent import Agent
-from smarts.core.sensors import Observation
+
 
 class SingleAgent(Agent):
     def act(self, obs: Observation):
@@ -32,20 +31,18 @@ class SingleAgent(Agent):
         )
 
 
-
 class SingleEnv(gym.Wrapper):
     def __init__(self, config):
         self.config = config
-        self.neighborhood_radius = config["env_para"]["neighborhood_radius"]
-        self.rgb_wh = config["env_para"]["rgb_wh"]
+        self.agent_id = config["env_para"]["agent_ids"][0]
 
         agent_interface = smarts_agent_interface.AgentInterface(
             max_episode_steps=config["env_para"]["max_episode_steps"],
             neighborhood_vehicles=smarts_agent_interface.NeighborhoodVehicles(
-                radius=self.neighborhood_radius
+                radius=config["env_para"]["neighborhood_radius"]
             ),
             rgb=smarts_agent_interface.RGB(
-                width=256, height=256, resolution=self.rgb_wh / 256
+                width=256, height=256, resolution=config["env_para"]["rgb_wh"] / 256
             ),
             vehicle_color="Blue",
             action=smarts_controllers.ActionSpaceType.Continuous,
@@ -60,7 +57,7 @@ class SingleEnv(gym.Wrapper):
         )
 
         agent_specs = {
-            "Agent_001": smarts_agent.AgentSpec(
+            self.agent_id: smarts_agent.AgentSpec(
                 interface=agent_interface,
                 agent_builder=None,
                 observation_adapter=observation_adapter,
@@ -75,14 +72,12 @@ class SingleEnv(gym.Wrapper):
             agent_specs=agent_specs,
             headless=config["env_para"]["headless"],
             visdom=config["env_para"]["visdom"],
-            seed=42,
+            seed=config["env_para"]["seed"],
         )
+        # Wrap env with FrameStack to stack multiple observations
+        env = smarts_frame_stack.FrameStack(env=env, num_stack=9, num_skip=4)
 
         super(SingleEnv, self).__init__(env)
-
-
-        # Wrap env with FrameStack to stack multiple observations
-        self.env = smarts_frame_stack.FrameStack(env=env, num_stack=9, num_skip=4)
 
         # Set action space and observation space
         self.action_space = gym.spaces.Box(
@@ -92,13 +87,7 @@ class SingleEnv(gym.Wrapper):
             low=-1, high=1, shape=(256, 256, 3), dtype=np.float32
         )
 
-    def reset(self) -> Dict[str, np.ndarray]:
-        """
-        Reset the environment, if done is true, must clear obs array.
-
-        :return: the observation of gym environment
-        """
-
+    def reset(self) -> np.ndarray:
         raw_states = self.env.reset()
 
         # Stack observation into 3D numpy matrix
@@ -107,21 +96,11 @@ class SingleEnv(gym.Wrapper):
             for agent_id, raw_state in raw_states.items()
         }
 
-        self.init_state = states
-        return states
+        return states[self.agent_id]
+
 
     def step(self, action):
-        """
-        Run one timestep of the environment's dynamics.
-
-        Accepts an action and returns a tuple (state, reward, done, info).
-
-        :param action: action
-        :param agent_index: the index of agent
-        :return: state, reward, done, info
-        """
-
-        raw_states, rewards, dones, infos = self.env.step(action)
+        raw_states, rewards, dones, infos = self.env.step({self.agent_id:action})
 
         # Stack observation into 3D numpy matrix
         states = {
@@ -141,13 +120,22 @@ class SingleEnv(gym.Wrapper):
         #         plt.imshow(img)
         # plt.show()
 
-        return states, rewards, dones, infos
+        return states[self.agent_id], rewards[self.agent_id], dones[self.agent_id], infos[self.agent_id]
 
     def close(self):
         if self.env is not None:
             return self.env.close()
         return None
 
+
+def stack_matrix(states: List[np.ndarray]) -> np.ndarray:
+    # Stack 2D images along the depth dimension
+    if states[0].ndim == 2 or states[0].ndim == 3:
+        return np.dstack(states)
+    else:
+        raise Exception(
+            f"Expected input numpy array with 2 or 3 dimensions, but received input with {states[0].ndim} dimensions."
+        )
 
 def info_adapter(obs, reward, info):
     return reward
@@ -207,15 +195,17 @@ def reward_adapter(obs, env_reward):
 
     # Penalty for driving off road
     if obs.events.off_road:
-        reward -= 10
+        reward -= 30
+        print(f"Vehicle {ego.id} went off road.")
         return np.float32(reward)
 
      # Reward for colliding
     for c in obs.events.collisions:
-        reward -= 10
+        reward -= 30
         print(f"Vehicle {ego.id} collided with vehicle {c.collidee_id}.")
         return np.float32(reward)
 
+    # Reward for staying on track
     reward += 1
 
     return np.float32(reward)

@@ -1,6 +1,6 @@
 env_para:
   env_name: SMARTS
-  first_seed: 42
+  seed: 42
   headless: True
   visdom: False
   neighborhood_radius: 55 # Radius (meter) for neighborhood vehicles
@@ -8,10 +8,6 @@ env_para:
   max_episode_steps: 1800 # 3 minutes. Maximum steps per episode.
   agent_ids: 
     - predator1
-    - predator2
-    - predator3
-    - prey1
-    - prey2
   controller: Categorical
   scenarios: 
     - /home/kyber/workspaces/SMARTS/scenarios/cloverleaf
