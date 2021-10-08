@@ -69,19 +69,18 @@ def main(config):
     model.save(model_path)
 
     print("[INFO] Wait")
-    import time
-    time.sleep(834)
+    # import time
+    # time.sleep(834)
 
     print("[INFO] Delete Model")
     del model  # remove to demonstrate saving and loading
 
     print("[INFO] Load Model")
     model = PPO.load(model_path)
-    # obs = env.reset()
-    # while True:
-    #     action, _states = model.predict(obs)
-    #     obs, rewards, dones, info = env.step(action)
-    #     env.render()
+    obs = env.reset()
+    while not dones["__all__"]:
+        action, _states = model.predict(obs)
+        obs, rewards, dones, info = env.step(action)
 
     print("[INFO] Close Env")
     # Close env
