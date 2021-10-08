@@ -32,7 +32,6 @@ def main(config):
     model_path = Path(config["model_para"]["model_path"]).joinpath(
         f"{name}_{datetime.now().strftime('%Y_%m_%d_%H_%M')}"
     )
-    print(model_path, " --------")
     # # Tensorboard
     # path = Path(config["model_para"]["tensorboard_path"]).joinpath(
     #     f"{name}_{datetime.now().strftime('%Y_%m_%d_%H_%M')}"
@@ -42,8 +41,12 @@ def main(config):
     # SB3 environments
     # env = make_vec_env("CartPole-v1", n_envs=4)
 
-    env_checker.check_env(env)
-    print("completed environment checker ??????????????????????")
+    try:
+        env_checker.check_env(env)
+        print("Completed environment check")
+    except Exception as e:
+        print(f"Your environment is not single-agent gym compliant.")
+        raise e
 
     model = PPO("CnnPolicy", env, verbose=1)
     print("completed model instantiation ??????????????????????")
@@ -51,7 +54,7 @@ def main(config):
     def interrupt(*args):
         nonlocal mode
         if mode == Mode.TRAIN:
-            model.save("ppo_single_agent")
+            model.save(model_path)
         env.close()
         print("Interrupt key detected.")
         sys.exit(0)
@@ -65,13 +68,11 @@ def main(config):
 
     print("completed training ??????????????????????")
     import time
-
     time.sleep(834)
 
     del model  # remove to demonstrate saving and loading
 
     model = PPO.load(model_path)
-
     # obs = env.reset()
     # while True:
     #     action, _states = model.predict(obs)

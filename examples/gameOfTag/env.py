@@ -58,7 +58,7 @@ class SingleEnv(gym.Wrapper):
         )
 
         # Wrap env with FrameStack to stack multiple observations
-        env = smarts_frame_stack.FrameStack(env=env, num_stack=5, num_skip=4)
+        # env = smarts_frame_stack.FrameStack(env=env, num_stack=5, num_skip=4)
 
         # Initialize base env
         super(SingleEnv, self).__init__(env)
@@ -76,10 +76,11 @@ class SingleEnv(gym.Wrapper):
         raw_states = self.env.reset()
 
         # Stack observation into 3D numpy matrix
-        states = {
-            agent_id: stack_matrix(raw_state)
-            for agent_id, raw_state in raw_states.items()
-        }
+        # states = {
+        #     agent_id: stack_matrix(raw_state)
+        #     for agent_id, raw_state in raw_states.items()
+        # }
+        states = raw_states
 
         return states[self.agent_id]
 
@@ -87,28 +88,26 @@ class SingleEnv(gym.Wrapper):
         raw_states, rewards, dones, infos = self.env.step({self.agent_id: action})
 
         # Stack observation into 3D numpy matrix
-        states = {
-            agent_id: stack_matrix(raw_state)
-            for agent_id, raw_state in raw_states.items()
-        }
-
-        print(type(states[self.agent_id]),";;;;;;;;;;;;;;;;;;;;;;;")
-        print(states[self.agent_id].shape,";;;;;;;;;;;;;;;;;;;;;;;")
-
+        # states = {
+        #     agent_id: stack_matrix(raw_state)
+        #     for agent_id, raw_state in raw_states.items()
+        # }
+        states = raw_states
+        
         # Plot for debugging purposes
-        import matplotlib.pyplot as plt
-        columns = 2
-        rgb_gray = 3 # 3 for rgb and 1 for grayscale
-        n_states = len(raw_states.keys())
-        fig, axes = plt.subplots(1, n_states*columns, figsize=(10, 10))
-        fig.tight_layout()
-        ax = axes.ravel()
-        for row, (agent_id, state) in enumerate(states.items()):
-            for col in range(columns):
-                img = state[:,:,rgb_gray*col:rgb_gray*col+rgb_gray]
-                ax[row*columns+col].imshow(img)
-                ax[row*columns+col].set_title(agent_id)
-        plt.show()
+        # import matplotlib.pyplot as plt
+        # columns = 2 # number of frames stacked for each agent
+        # rgb_gray = 3 # 3 for rgb and 1 for grayscale
+        # n_states = len(raw_states.keys())
+        # fig, axes = plt.subplots(1, n_states*columns, figsize=(10, 10))
+        # fig.tight_layout()
+        # ax = axes.ravel()
+        # for row, (agent_id, state) in enumerate(states.items()):
+        #     for col in range(columns):
+        #         img = state[:,:,rgb_gray*col:rgb_gray*col+rgb_gray]
+        #         ax[row*columns+col].imshow(img)
+        #         ax[row*columns+col].set_title(agent_id)
+        # plt.show()
 
         return (
             states[self.agent_id],
@@ -123,14 +122,15 @@ class SingleEnv(gym.Wrapper):
         return None
 
 
-def stack_matrix(states: List[np.ndarray]) -> np.ndarray:
-    # Stack 2D images along the depth dimension
-    if states[0].ndim == 2 or states[0].ndim == 3:
-        return np.dstack(states)
-    else:
-        raise Exception(
-            f"Expected input numpy array with 2 or 3 dimensions, but received input with {states[0].ndim} dimensions."
-        )
+# def stack_matrix(states: List[np.ndarray]) -> np.ndarray:
+#     # Stack 2D images along the depth dimension
+#     print(states)
+#     if states[0].ndim == 2 or states[0].ndim == 3:
+#         return np.dstack(states)
+#     else:
+#         raise Exception(
+#             f"Expected input numpy array with 2 or 3 dimensions, but received input with {states[0].ndim} dimensions."
+#         )
 
 
 def info_adapter(obs, reward, info):
@@ -165,23 +165,21 @@ def observation_adapter(obs) -> np.ndarray:
 
     # Center frames
     # frame = grayscale * 2 - 1
-    print(type(coloured_self[0][0][0]), " coloured_self type in python 00000000000000000000000")
     frame = coloured_self.astype(np.uint8)
-    print(type(frame[0][0][0]), " frame type in python 00000000000000000000000")
 
     # Plot graph
-    fig, axes = plt.subplots(1, 4, figsize=(10, 10))
-    ax = axes.ravel()
-    ax[0].imshow(rgb)
-    ax[0].set_title("RGB")
-    ax[1].imshow(coloured_self)
-    ax[1].set_title("Coloured self - yellow")
+    # fig, axes = plt.subplots(1, 4, figsize=(10, 10))
+    # ax = axes.ravel()
+    # ax[0].imshow(rgb)
+    # ax[0].set_title("RGB")
+    # ax[1].imshow(coloured_self)
+    # ax[1].set_title("Coloured self - yellow")
     # ax[2].imshow(grayscale, cmap=plt.cm.gray)
-    ax[2].set_title("Grayscale")
-    ax[3].imshow(frame)
-    ax[3].set_title("Centered")
-    fig.tight_layout()
-    plt.show()
+    # ax[2].set_title("Grayscale")
+    # ax[3].imshow(frame)
+    # ax[3].set_title("Centered")
+    # fig.tight_layout()
+    # plt.show()
     # sys.exit(2)
 
     return frame
