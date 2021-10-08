@@ -69,7 +69,7 @@ class SingleEnv(gym.Wrapper):
         )
         # Observation space
         self.observation_space = gym.spaces.Box(
-            low=0, high=255, shape=(256, 256, 6), dtype=np.uint8
+            low=0, high=255, shape=(256, 256, 3), dtype=np.uint8
         )
 
     def reset(self) -> np.ndarray:

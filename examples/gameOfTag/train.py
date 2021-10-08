@@ -41,6 +41,7 @@ def main(config):
     # SB3 environments
     # env = make_vec_env("CartPole-v1", n_envs=4)
 
+    print("[INFO] Check Env")
     try:
         env_checker.check_env(env)
         print("Completed environment check")
@@ -48,8 +49,8 @@ def main(config):
         print(f"Your environment is not single-agent gym compliant.")
         raise e
 
+    print("[INFO] Create Model")
     model = PPO("CnnPolicy", env, verbose=1)
-    print("completed model instantiation ??????????????????????")
 
     def interrupt(*args):
         nonlocal mode
@@ -63,15 +64,18 @@ def main(config):
     signal.signal(signal.SIGINT, interrupt)
 
     # Train
+    print("[INFO] Train")
     model.learn(total_timesteps=5)
     model.save(model_path)
 
-    print("completed training ??????????????????????")
+    print("[INFO] Wait")
     import time
     time.sleep(834)
 
+    print("[INFO] Delete Model")
     del model  # remove to demonstrate saving and loading
 
+    print("[INFO] Load Model")
     model = PPO.load(model_path)
     # obs = env.reset()
     # while True:
@@ -79,6 +83,7 @@ def main(config):
     #     obs, rewards, dones, info = env.step(action)
     #     env.render()
 
+    print("[INFO] Close Env")
     # Close env
     env.close()
 
