@@ -1,6 +1,7 @@
 import sys
 import signal
 import stable_baselines3 as sb3
+import time
 import yaml
 
 from datetime import datetime
@@ -45,26 +46,26 @@ def main(config):
 
     # Model
     print("[INFO] PPO Model")
-    model_path = None
     if config["model_para"]["model_initial"]:  # Start from existing model
+        print("[INFO] Load Model")
         model = PPO.load(config["model_para"]["model_agent"])
     else:  # Start from new model
+        print("[INFO] New Model")
         model = PPO("CnnPolicy", env, verbose=1)
 
     print("[INFO] Interrupt Handler")
 
     def interrupt(*args):
-        nonlocal mode
-        if mode == Mode.TRAIN:
-            model.save(get_model_path(config))
+        nonlocal model
+        model.save(get_model_path(config))
         env.close()
         print("Interrupt key detected.")
         sys.exit(0)
 
-    # Catch keyboard interrupt and terminate signal
-    signal.signal(signal.SIGINT, interrupt)
-
     if mode == Mode.TRAIN:
+        # Catch keyboard interrupt and terminate signal
+        signal.signal(signal.SIGINT, interrupt)
+
         # Train
         print("[INFO] Train")
         model.learn(total_timesteps=5)
@@ -78,10 +79,16 @@ def main(config):
         del model  # remove to demonstrate saving and loading
 
     if mode == Mode.EVALUATE:
-        print("[INFO] Load Model")
+        print("[INFO] Evaluate")
         obs = env.reset()
         dones = False
         while not dones:
+        # while True:
+        #     if dones:
+        #         obs = env.reset()
+        #         print("Env reset")
+        #         time.sleep(5)
+
             action, _states = model.predict(obs)
             obs, rewards, dones, info = env.step(action)
 

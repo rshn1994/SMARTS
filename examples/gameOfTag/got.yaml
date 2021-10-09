@@ -17,7 +17,7 @@ env_para:
 model_para:
   # Observation and action space
   state_dim: [256, 256, 3]
-  action_dim: 5
+  action_dim: 3
   
   # Optimizer
   initial_lr_predator: 0.001
@@ -38,11 +38,11 @@ model_para:
   # Models and logs
   save_interval: 50
   mode: train # train or evaluate
-  model_initial: false
+  model_initial: False
   # Local
   tensorboard_path: "/home/kyber/workspaces/SMARTS/examples/gameOfTag/logs/"
   model_path: "/home/kyber/workspaces/SMARTS/examples/gameOfTag/models/"
-  model_agent: "/home/kyber/workspaces/SMARTS/examples/gameOfTag/models/predator_2021_09_10_23_17/128"
+  # model_agent: "/home/kyber/workspaces/SMARTS/examples/gameOfTag/models/2021_10_08_22_36.zip"
   
   # tensorboard_path: "/home/adai/workspaces/SMARTS/examples/gameOfTag/logs/"
   # model_path: "/home/adai/workspaces/SMARTS/examples/gameOfTag/models/"
