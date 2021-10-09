@@ -42,7 +42,7 @@ model_para:
   # Local
   tensorboard_path: "/home/kyber/workspaces/SMARTS/examples/gameOfTag/logs/"
   model_path: "/home/kyber/workspaces/SMARTS/examples/gameOfTag/models/"
-  # model_agent: "/home/kyber/workspaces/SMARTS/examples/gameOfTag/models/predator_2021_09_10_23_17/128"
+  model_agent: "/home/kyber/workspaces/SMARTS/examples/gameOfTag/models/predator_2021_09_10_23_17/128"
   
   # tensorboard_path: "/home/adai/workspaces/SMARTS/examples/gameOfTag/logs/"
   # model_path: "/home/adai/workspaces/SMARTS/examples/gameOfTag/models/"
