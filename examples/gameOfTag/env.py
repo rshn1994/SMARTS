@@ -93,7 +93,7 @@ class SingleEnv(gym.Wrapper):
         #     for agent_id, raw_state in raw_states.items()
         # }
         states = raw_states
-        
+
         # Plot for debugging purposes
         # import matplotlib.pyplot as plt
         # columns = 2 # number of frames stacked for each agent

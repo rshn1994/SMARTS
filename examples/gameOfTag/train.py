@@ -14,9 +14,8 @@ from stable_baselines3.common.env_util import make_vec_env
 
 def main(config):
 
-    name = config["env_para"]["env_name"]
+    mode = config["model_para"]["mode"]
     save_interval = config["model_para"].get("save_interval", 50)
-    mode = Mode(config["model_para"]["mode"])
     num_train_epochs = config["model_para"]["num_train_epochs"]
     batch_size = config["model_para"]["batch_size"]
     max_batch = config["model_para"]["max_batch"]
@@ -27,11 +26,6 @@ def main(config):
     seed = config["env_para"]["seed"]
 
     env = got_env.SingleEnv(config)
-
-    # Model
-    model_path = Path(config["model_para"]["model_path"]).joinpath(
-        f"{name}_{datetime.now().strftime('%Y_%m_%d_%H_%M')}"
-    )
     # # Tensorboard
     # path = Path(config["model_para"]["tensorboard_path"]).joinpath(
     #     f"{name}_{datetime.now().strftime('%Y_%m_%d_%H_%M')}"
@@ -49,13 +43,20 @@ def main(config):
         print(f"Your environment is not single-agent gym compliant.")
         raise e
 
-    print("[INFO] Create Model")
-    model = PPO("CnnPolicy", env, verbose=1)
+    # Model
+    print("[INFO] PPO Model")
+    model_path = None
+    if config["model_para"]["model_initial"]:  # Start from existing model
+        model = PPO.load(config["model_para"]["model_agent"])
+    else:  # Start from new model
+        model = PPO("CnnPolicy", env, verbose=1)
+
+    print("[INFO] Interrupt Handler")
 
     def interrupt(*args):
         nonlocal mode
         if mode == Mode.TRAIN:
-            model.save(model_path)
+            model.save(get_model_path(config))
         env.close()
         print("Interrupt key detected.")
         sys.exit(0)
@@ -63,28 +64,36 @@ def main(config):
     # Catch keyboard interrupt and terminate signal
     signal.signal(signal.SIGINT, interrupt)
 
-    # Train
-    print("[INFO] Train")
-    model.learn(total_timesteps=5)
-    model.save(model_path)
+    if mode == Mode.TRAIN:
+        # Train
+        print("[INFO] Train")
+        model.learn(total_timesteps=5)
+        model.save(get_model_path(config))
 
-    print("[INFO] Wait")
-    # import time
-    # time.sleep(834)
+        print("[INFO] Wait")
+        # import time
+        # time.sleep(834)
 
-    print("[INFO] Delete Model")
-    del model  # remove to demonstrate saving and loading
+        print("[INFO] Delete Model")
+        del model  # remove to demonstrate saving and loading
 
-    print("[INFO] Load Model")
-    model = PPO.load(model_path)
-    obs = env.reset()
-    while not dones["__all__"]:
-        action, _states = model.predict(obs)
-        obs, rewards, dones, info = env.step(action)
+    if mode == Mode.EVALUATE:
+        print("[INFO] Load Model")
+        obs = env.reset()
+        dones = False
+        while not dones:
+            action, _states = model.predict(obs)
+            obs, rewards, dones, info = env.step(action)
 
     print("[INFO] Close Env")
     # Close env
     env.close()
+
+
+def get_model_path(config):
+    return Path(config["model_para"]["model_path"]).joinpath(
+        f"{datetime.now().strftime('%Y_%m_%d_%H_%M')}"
+    )
 
 
 if __name__ == "__main__":
