@@ -16,7 +16,7 @@ env_para:
 
 model_para:
   # Observation and action space
-  state_dim: [256, 256, 3]
+  state_dim: [256, 256, 6]
   action_dim: 3
   
   # Optimizer
@@ -31,14 +31,15 @@ model_para:
   clip_value: 0.2
 
   # Iteration size
-  batch_size: 64
+  batch_size: 128
   max_batch: 100000000
-  num_train_epochs: 5
+  num_train_epochs: 3
 
   # Models and logs
-  save_interval: 50
+  save_interval: 25
   mode: train # train or evaluate
   model_initial: False
+
   # Local
   tensorboard_path: "/home/kyber/workspaces/SMARTS/examples/gameOfTag/logs/"
   model_path: "/home/kyber/workspaces/SMARTS/examples/gameOfTag/models/"

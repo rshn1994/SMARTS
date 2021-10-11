@@ -58,7 +58,7 @@ class SingleEnv(gym.Wrapper):
         )
 
         # Wrap env with FrameStack to stack multiple observations
-        # env = smarts_frame_stack.FrameStack(env=env, num_stack=5, num_skip=4)
+        env = smarts_frame_stack.FrameStack(env=env, num_stack=5, num_skip=4)
 
         # Initialize base env
         super(SingleEnv, self).__init__(env)
@@ -69,18 +69,17 @@ class SingleEnv(gym.Wrapper):
         )
         # Observation space
         self.observation_space = gym.spaces.Box(
-            low=0, high=255, shape=(256, 256, 3), dtype=np.uint8
+            low=0, high=255, shape=(256, 256, 6), dtype=np.uint8
         )
 
     def reset(self) -> np.ndarray:
         raw_states = self.env.reset()
 
         # Stack observation into 3D numpy matrix
-        # states = {
-        #     agent_id: stack_matrix(raw_state)
-        #     for agent_id, raw_state in raw_states.items()
-        # }
-        states = raw_states
+        states = {
+            agent_id: stack_matrix(raw_state)
+            for agent_id, raw_state in raw_states.items()
+        }
 
         return states[self.agent_id]
 
@@ -88,17 +87,16 @@ class SingleEnv(gym.Wrapper):
         raw_states, rewards, dones, infos = self.env.step({self.agent_id: action})
 
         # Stack observation into 3D numpy matrix
-        # states = {
-        #     agent_id: stack_matrix(raw_state)
-        #     for agent_id, raw_state in raw_states.items()
-        # }
-        states = raw_states
+        states = {
+            agent_id: stack_matrix(raw_state)
+            for agent_id, raw_state in raw_states.items()
+        }
 
         # Plot for debugging purposes
         # import matplotlib.pyplot as plt
         # columns = 2 # number of frames stacked for each agent
         # rgb_gray = 3 # 3 for rgb and 1 for grayscale
-        # n_states = len(raw_states.keys())
+        # n_states = len(states.keys())
         # fig, axes = plt.subplots(1, n_states*columns, figsize=(10, 10))
         # fig.tight_layout()
         # ax = axes.ravel()
@@ -122,15 +120,14 @@ class SingleEnv(gym.Wrapper):
         return None
 
 
-# def stack_matrix(states: List[np.ndarray]) -> np.ndarray:
-#     # Stack 2D images along the depth dimension
-#     print(states)
-#     if states[0].ndim == 2 or states[0].ndim == 3:
-#         return np.dstack(states)
-#     else:
-#         raise Exception(
-#             f"Expected input numpy array with 2 or 3 dimensions, but received input with {states[0].ndim} dimensions."
-#         )
+def stack_matrix(states: List[np.ndarray]) -> np.ndarray:
+    # Stack 2D images along the depth dimension
+    if states[0].ndim == 2 or states[0].ndim == 3:
+        return np.dstack(states)
+    else:
+        raise Exception(
+            f"Expected input numpy array with 2 or 3 dimensions, but received input with {states[0].ndim} dimensions."
+        )
 
 
 def info_adapter(obs, reward, info):

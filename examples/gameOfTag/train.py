@@ -16,7 +16,7 @@ from stable_baselines3.common.env_util import make_vec_env
 def main(config):
 
     mode = config["model_para"]["mode"]
-    save_interval = config["model_para"].get("save_interval", 50)
+    save_interval = config["model_para"]["save_interval"]
     num_train_epochs = config["model_para"]["num_train_epochs"]
     batch_size = config["model_para"]["batch_size"]
     max_batch = config["model_para"]["max_batch"]
@@ -68,7 +68,7 @@ def main(config):
 
         # Train
         print("[INFO] Train")
-        model.learn(total_timesteps=5)
+        model.learn(total_timesteps=100000000)
         model.save(get_model_path(config))
 
         print("[INFO] Wait")
