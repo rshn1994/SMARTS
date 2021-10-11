@@ -37,18 +37,16 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.7 1
 ENV VIRTUAL_ENV=/opt/.venv
 RUN python3.7 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN wget --no-check-certificate https://bootstrap.pypa.io/get-pip.py -O get-pip.py && \
-    python get-pip.py && \
-    pip install --upgrade pip
+RUN pip install --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --trusted-host pypi.org --upgrade pip
 
 # Install requirements.txt
 COPY ./examples/gameOfTag/requirements.txt /tmp/gameOfTag/requirements.txt
-RUN pip install --no-cache-dir -r /tmp/gameOfTag/requirements.txt
+RUN pip install --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --trusted-host pypi.org --no-cache-dir -r /tmp/gameOfTag/requirements.txt
 
 # Copy source files and install SMARTS
 COPY . /src
 WORKDIR /src
-RUN pip install --no-cache-dir -e . && \
+RUN pip install --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --trusted-host pypi.org --no-cache-dir -e . && \
     cp -r /src/smarts.egg-info /media/smarts.egg-info
 
 # Build scenarios and maps
