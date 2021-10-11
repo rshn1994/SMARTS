@@ -45,6 +45,8 @@ $ docker build --network=host -f ./utils/docker/Dockerfile.tensorflow -t test .
 
 $ docker run --rm -it --gpus=all --network=host --volume=/home/kyber/workspaces/SMARTS/:/src/ adaickalavan/smarts:v0.4.19-tensorflow
 
+$ docker run --rm -it --gpus=all --network=host --volume=/home/kyber/workspaces/SMARTS/examples/gameOfTag/logs:/src/examples/gameOfTag/logs --volume=/home/kyber/workspaces/SMARTS/examples/gameOfTag/models:/src/examples/gameOfTag/models adaickalavan/smarts:v0.4.19-tensorflow
+
 $ docker run --rm -it --gpus=all --network=host --volume=/home/adai/workspaces/SMARTS/:/src/ adaickalavan/smarts:v0.4.19-tensorflow
 
 

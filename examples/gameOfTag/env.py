@@ -189,13 +189,13 @@ def reward_adapter(obs, env_reward):
     # Penalty for driving off road
     if obs.events.off_road:
         reward -= 30
-        print(f"Vehicle {ego.id} went off road.")
+        # print(f"Vehicle {ego.id} went off road.")
         return np.float(reward)
 
     # Reward for colliding
     for c in obs.events.collisions:
         reward -= 30
-        print(f"Vehicle {ego.id} collided with vehicle {c.collidee_id}.")
+        # print(f"Vehicle {ego.id} collided with vehicle {c.collidee_id}.")
         return np.float(reward)
 
     # Reward for staying on track
