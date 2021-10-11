@@ -9,10 +9,10 @@ env_para:
   agent_ids: 
     - predator1
   scenarios: 
-    - /home/kyber/workspaces/SMARTS/scenarios/cloverleaf
+    # - /home/kyber/workspaces/SMARTS/scenarios/cloverleaf
     # - /home/a84166141/workspaces/SMARTS/scenarios/cloverleaf
     # - /home/adai/workspaces/SMARTS/scenarios/cloverleaf    
-    # - /src/scenarios/cloverleaf
+    - /src/scenarios/cloverleaf
 
 model_para:
   # Observation and action space
@@ -32,7 +32,7 @@ model_para:
 
   # Iteration size
   batch_size: 128
-  max_batch: 100000000
+  max_time_steps: 10000000
   num_train_epochs: 3
 
   # Models and logs
@@ -41,8 +41,8 @@ model_para:
   model_initial: False
 
   # Local
-  tensorboard_path: "/home/kyber/workspaces/SMARTS/examples/gameOfTag/logs/"
-  model_path: "/home/kyber/workspaces/SMARTS/examples/gameOfTag/models/"
+  # tensorboard_path: "/home/kyber/workspaces/SMARTS/examples/gameOfTag/logs/"
+  # model_path: "/home/kyber/workspaces/SMARTS/examples/gameOfTag/models/"
   # model_agent: "/home/kyber/workspaces/SMARTS/examples/gameOfTag/models/2021_10_08_22_36.zip"
   
   # tensorboard_path: "/home/adai/workspaces/SMARTS/examples/gameOfTag/logs/"
@@ -50,10 +50,5 @@ model_para:
   # model_agent: "/home/adai/workspaces/SMARTS/examples/gameOfTag/models1/predator_2021_09_23_21_59/6464"
   
   # Docker
-  # tensorboard_path: "/src/examples/gameOfTag/logs/"
-  # model_path: "/src/examples/gameOfTag/models/"
-
-
-# minibatch K = 3-15, 
-# batch size M = 64-4096, 
-# trajectory size T (horizon) = 128-2048
+  tensorboard_path: "/src/examples/gameOfTag/logs/"
+  model_path: "/src/examples/gameOfTag/models/"

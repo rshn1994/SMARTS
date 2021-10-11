@@ -16,15 +16,6 @@ from stable_baselines3.common.env_util import make_vec_env
 def main(config):
 
     mode = config["model_para"]["mode"]
-    save_interval = config["model_para"]["save_interval"]
-    num_train_epochs = config["model_para"]["num_train_epochs"]
-    batch_size = config["model_para"]["batch_size"]
-    max_batch = config["model_para"]["max_batch"]
-    clip_value = config["model_para"]["clip_value"]
-    critic_loss_weight = config["model_para"]["critic_loss_weight"]
-    ent_discount_val = config["model_para"]["entropy_loss_weight"]
-    ent_discount_rate = config["model_para"]["entropy_loss_discount_rate"]
-    seed = config["env_para"]["seed"]
 
     env = got_env.SingleEnv(config)
     # # Tensorboard
@@ -68,7 +59,7 @@ def main(config):
 
         # Train
         print("[INFO] Train")
-        model.learn(total_timesteps=100000000)
+        model.learn(total_timesteps=config["model_para"]["max_time_steps"])
         model.save(get_model_path(config))
 
         print("[INFO] Wait")
