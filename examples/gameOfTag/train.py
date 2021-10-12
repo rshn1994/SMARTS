@@ -11,24 +11,7 @@ from pathlib import Path
 from stable_baselines3.common import env_checker
 from stable_baselines3 import PPO
 # from stable_baselines3.common.env_util import make_vec_env
-# from stable_baselines3.common.utils import set_random_seed
 # from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
-
-
-# def make_env(env, rank, seed=0):
-#     """
-#     Utility function for multiprocessed env.
-
-#     :param env_id: (str) the environment ID
-#     :param num_env: (int) the number of environments you wish to have in subprocesses
-#     :param seed: (int) the inital seed for RNG
-#     :param rank: (int) index of the subprocess
-#     """
-#     def _init():
-#         env.seed(seed + rank)
-#         return env
-#     set_random_seed(seed)
-#     return _init
 
 
 def main(config):
@@ -51,6 +34,11 @@ def main(config):
         print(f"Your environment is not single-agent gym compliant.")
         raise e
 
+    # Tensorboard
+    tb_path = Path(config["model_para"]["tensorboard_path"]).joinpath(
+        f"{datetime.now().strftime('%Y_%m_%d_%H_%M')}"
+    )
+
     # Model
     print("[INFO] PPO Model")
     if config["model_para"]["model_initial"]:  # Start from existing model
@@ -58,10 +46,11 @@ def main(config):
         model = PPO.load(config["model_para"]["model_agent"])
     else:  # Start from new model
         print("[INFO] New Model")
-        model = PPO("CnnPolicy", env, verbose=1)
+        # model = PPO("CnnPolicy", env, ent_coef=0.01, tensorboard_log=tb_path, verbose=1)
+        model = PPO("CnnPolicy", env, tensorboard_log=tb_path, verbose=1)
+
 
     print("[INFO] Interrupt Handler")
-
     def interrupt(*args):
         nonlocal model
         model.save(get_model_path(config))
@@ -77,7 +66,7 @@ def main(config):
         print("[INFO] Train")
         model.learn(
             total_timesteps=config["model_para"]["max_time_steps"],
-            log_interval=10)
+            log_interval=1)
         model.save(get_model_path(config))
 
         print("[INFO] Wait")
