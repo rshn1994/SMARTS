@@ -49,6 +49,9 @@ $ docker run --rm -it --gpus=all --network=host --volume=/home/kyber/workspaces/
 
 $ docker run --rm -it --gpus=all --network=host --volume=/home/adai/workspaces/SMARTS/:/src/ adaickalavan/smarts:v0.4.19-tensorflow
 
+$ docker run --rm -it --gpus=all --network=host --volume=/data:/data2  got:2021_10_12_10_53 
+
+
 
 # In interactive docker container bash 
 $ cd /src

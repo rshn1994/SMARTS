@@ -6,6 +6,7 @@ env_para:
   neighborhood_radius: 55 # Radius (meter) for neighborhood vehicles
   rgb_wh: 110 # Height and width (meter) of RGB image in SMARTS observation
   max_episode_steps: 1800 # 3 minutes. Maximum steps per episode.
+  num_env: 8
   agent_ids: 
     - predator1
   scenarios: 

@@ -11,7 +11,7 @@ from typing import List
 
 
 class SingleAgent(gym.Wrapper):
-    def __init__(self, config, rank:int):
+    def __init__(self, config, rank: int):
 
         self.agent_id = config["env_para"]["agent_ids"][0]
 
@@ -51,10 +51,11 @@ class SingleAgent(gym.Wrapper):
         # HiWayEnv
         env = smarts_hiway_env.HiWayEnv(
             scenarios=config["env_para"]["scenarios"],
+            sim_name=f"{config['env_para']['seed']+rank}",
             agent_specs=agent_specs,
             headless=config["env_para"]["headless"],
             visdom=config["env_para"]["visdom"],
-            seed=config["env_para"]["seed"]+rank,
+            seed=config["env_para"]["seed"] + rank,
         )
 
         # Wrap env with FrameStack to stack multiple observations
