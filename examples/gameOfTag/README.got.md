@@ -1,7 +1,7 @@
 # Instructions to run Game of Tag example
 
 ## Build manually and run locally
-Currently, do not install `smarts` directly from pypi. Instead, install `smarts` from the `smarts-got` branch of `huaweinoah/smarts` repository. 
+Currently, do not install `smarts` directly from pypi. Instead, install `smarts` from the `smarts-got-*` branch of `huaweinoah/smarts` repository. 
 
 The steps to install and run smarts-got is as follows.
 
@@ -9,7 +9,7 @@ The steps to install and run smarts-got is as follows.
 # Install Smarts and build scenarios
 $ cd /path/to/SMARTS/
 $ git clone https://github.com/huawei-noah/SMARTS.git 
-$ git checkout smarts-got
+$ git checkout smarts-got-*
 # Follow prompts for setting up sumo and SUMO_HOME environment variable
 $ ./install_deps.sh
 # Verify sumo is >= 1.5.0
@@ -17,7 +17,8 @@ $ sumo
 $ python3.7 -m venv .venv
 $ source ./.venv/bin/activate
 $ pip install --upgrade pip
-$ pip install -e .[train,test,dev,camera-obs,got]
+$ pip install -e .[dev,camera-obs]
+$ pip install -r ./examples/gameOfTag/requirements.txt
 $ scl scenario build-all ./scenarios
 
 # Run the code 
@@ -51,14 +52,10 @@ $ docker run --rm -it --gpus=all --network=host --volume=/home/adai/workspaces/S
 
 $ docker run --rm -it --gpus=all --network=host --volume=/data:/data2  got:2021_10_12_10_53 
 
-
-
 # In interactive docker container bash 
 $ cd /src
 # To train
 $ PYTHONHASHSEED=0 python3.7 ./examples/gameOfTag/train.py
-# To evaluate
-$ PYTHONHASHSEED=0 python3.7 ./examples/gameOfTag/evaluate.py
 ```
 
 ## Tensorboard
@@ -67,18 +64,10 @@ $ tensorboard --logdir=/home/adai/workspaces/SMARTS/examples/gameOfTag/logs
 $ tensorboard --logdir=/home/adai/workspaces/training/got_2021_09_27_03_36/logs
 ```
 
-## TODO
-- simplify reward function
-- launch shell script
-
-- randomness in keras
-- multiprocessing training in gpu
-- list out of index
-
-
 ## Training
-1. got_2021_09_27_01_58 got:2021_09_27_01_58
-    - rgb=110/256, radius=55,
-    - neuralnetwork = 
-    - 
-1.
+1. got_2021_10_12_16_17
+- observation: two rgb images 
+
+1. got_2021_10_12_10_53
+- observation: two rgb images
+- subprocvecenv
