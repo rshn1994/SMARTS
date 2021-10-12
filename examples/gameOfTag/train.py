@@ -8,10 +8,10 @@ from datetime import datetime
 from examples.gameOfTag import env as got_env
 from examples.gameOfTag.types import Mode
 from pathlib import Path
-from stable_baselines3.common import env_checker
 from stable_baselines3 import PPO
-from stable_baselines3.common.vec_env import SubprocVecEnv
+from stable_baselines3.common import env_checker
 from stable_baselines3.common.utils import set_random_seed
+from stable_baselines3.common.vec_env import SubprocVecEnv
 
 
 def make_env(config, rank):
@@ -94,7 +94,6 @@ def main(config):
             #         obs = env.reset()
             #         print("Env reset")
             #         time.sleep(5)
-
             action, _states = model.predict(obs)
             obs, rewards, dones, info = env.step(action)
 
