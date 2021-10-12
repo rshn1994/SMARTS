@@ -10,10 +10,12 @@ from examples.gameOfTag.types import Mode
 from pathlib import Path
 from stable_baselines3.common import env_checker
 from stable_baselines3 import PPO
-from stable_baselines3.common.env_util import make_vec_env
+# from stable_baselines3.common.env_util import make_vec_env
+# from stable_baselines3.common.utils import set_random_seed
+# from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 
-# def make_env(env_id, rank, seed=0):
+# def make_env(env, rank, seed=0):
 #     """
 #     Utility function for multiprocessed env.
 
@@ -23,7 +25,6 @@ from stable_baselines3.common.env_util import make_vec_env
 #     :param rank: (int) index of the subprocess
 #     """
 #     def _init():
-#         env = gym.make(env_id)
 #         env.seed(seed + rank)
 #         return env
 #     set_random_seed(seed)
@@ -33,13 +34,11 @@ from stable_baselines3.common.env_util import make_vec_env
 def main(config):
 
     mode = config["model_para"]["mode"]
+  
+    # num_cpu = 2  # Number of processes to use
+    # env = SubprocVecEnv([got_env.SingleEnv(config, i) for i in range(num_cpu)])
 
-    env = got_env.SingleEnv(config)
-    # # Tensorboard
-    # path = Path(config["model_para"]["tensorboard_path"]).joinpath(
-    #     f"{name}_{datetime.now().strftime('%Y_%m_%d_%H_%M')}"
-    # )
-    # tb = tf.summary.create_file_writer(str(path))
+    env = got_env.SingleAgent(config, 0)
 
     # SB3 environments
     # env = make_vec_env("CartPole-v1", n_envs=4)
@@ -76,7 +75,9 @@ def main(config):
 
         # Train
         print("[INFO] Train")
-        model.learn(total_timesteps=config["model_para"]["max_time_steps"])
+        model.learn(
+            total_timesteps=config["model_para"]["max_time_steps"],
+            log_interval=10)
         model.save(get_model_path(config))
 
         print("[INFO] Wait")

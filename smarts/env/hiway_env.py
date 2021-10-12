@@ -24,12 +24,13 @@ import warnings
 
 from envision.client import Client as Envision
 from smarts.core import seed as smarts_seed
+from smarts.core.agent import AgentSpec
 from smarts.core.scenario import Scenario
 from smarts.core.smarts import SMARTS
 from smarts.core.sumo_traffic_simulation import SumoTrafficSimulation
 from smarts.core.utils.visdom_client import VisdomClient
 from smarts.core.utils.logging import timeit
-from typing import Sequence
+from typing import Dict, Sequence
 
 
 class HiWayEnv(gym.Env):
@@ -73,7 +74,7 @@ class HiWayEnv(gym.Env):
     def __init__(
         self,
         scenarios: Sequence[str],
-        agent_specs,
+        agent_specs: Dict[str, AgentSpec],
         sim_name=None,
         shuffle_scenarios=True,
         headless=False,
@@ -231,3 +232,4 @@ class HiWayEnv(gym.Env):
     def close(self):
         if self._smarts is not None:
             self._smarts.destroy()
+            self._smarts = None

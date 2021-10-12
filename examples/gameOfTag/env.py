@@ -10,9 +10,9 @@ from smarts.env.wrappers import frame_stack as smarts_frame_stack
 from typing import List
 
 
-class SingleEnv(gym.Wrapper):
-    def __init__(self, config):
-        self.config = config
+class SingleAgent(gym.Wrapper):
+    def __init__(self, config, rank:int):
+
         self.agent_id = config["env_para"]["agent_ids"][0]
 
         # Agent interface
@@ -54,14 +54,14 @@ class SingleEnv(gym.Wrapper):
             agent_specs=agent_specs,
             headless=config["env_para"]["headless"],
             visdom=config["env_para"]["visdom"],
-            seed=config["env_para"]["seed"],
+            seed=config["env_para"]["seed"]+rank,
         )
 
         # Wrap env with FrameStack to stack multiple observations
         env = smarts_frame_stack.FrameStack(env=env, num_stack=5, num_skip=4)
 
         # Initialize base env
-        super(SingleEnv, self).__init__(env)
+        super(SingleAgent, self).__init__(env)
 
         # Action space
         self.action_space = gym.spaces.Box(
@@ -188,13 +188,13 @@ def reward_adapter(obs, env_reward):
 
     # Penalty for driving off road
     if obs.events.off_road:
-        reward -= 30
+        reward -= 50
         # print(f"Vehicle {ego.id} went off road.")
         return np.float(reward)
 
     # Reward for colliding
     for c in obs.events.collisions:
-        reward -= 30
+        reward -= 50
         # print(f"Vehicle {ego.id} collided with vehicle {c.collidee_id}.")
         return np.float(reward)
 
