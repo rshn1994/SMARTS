@@ -1,7 +1,6 @@
 import sys
 import signal
 import stable_baselines3 as sb3
-import time
 import yaml
 
 from datetime import datetime
@@ -54,8 +53,8 @@ def main(config):
         model = PPO.load(config["model_para"]["model_agent"])
     else:  # Start from new model
         print("[INFO] New Model")
-        # model = PPO("CnnPolicy", env, ent_coef=0.01, tensorboard_log=tb_path, verbose=1)
-        model = PPO("CnnPolicy", env, tensorboard_log=tb_path, verbose=1)
+        model = PPO("CnnPolicy", env, ent_coef=config["model_para"]["entropy_loss_weight"], tensorboard_log=tb_path, verbose=1)
+        # model = PPO("CnnPolicy", env, tensorboard_log=tb_path, verbose=1)
 
     print("[INFO] Interrupt Handler")
 
