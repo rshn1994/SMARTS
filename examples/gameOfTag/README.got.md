@@ -71,3 +71,10 @@ $ tensorboard --logdir=/home/adai/workspaces/training/got_2021_09_27_03_36/logs
 1. got_2021_10_12_10_53
 - observation: two rgb images
 - subprocvecenv
+
+1. got_2021_10_12_18_16
+- observation: two rgb images
+- subprocvecenv
+- ent_coef=0.01
+
+1. 
