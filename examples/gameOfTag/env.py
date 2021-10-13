@@ -59,7 +59,7 @@ class SingleAgent(gym.Wrapper):
         )
 
         # Wrap env with FrameStack to stack multiple observations
-        env = smarts_frame_stack.FrameStack(env=env, num_stack=5, num_skip=4)
+        env = smarts_frame_stack.FrameStack(env=env, num_stack=4, num_skip=1)
 
         # Initialize base env
         super(SingleAgent, self).__init__(env)
