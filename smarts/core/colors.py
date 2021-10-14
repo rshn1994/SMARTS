@@ -22,16 +22,19 @@ from enum import Enum
 
 # Color channel order: RGBA
 class Colors(Enum):
+    BrightRed = (255 / 255, 0 / 255, 0 / 255, 1)
     Red = (210 / 255, 30 / 255, 30 / 255, 1)
     Rose = (196 / 255, 0, 84 / 255, 1)
     Burgundy = (127 / 255, 0, 1 / 255, 1)
     Orange = (237 / 255, 109 / 255, 0, 1)
     Yellow = (255 / 255, 190 / 255, 40 / 255, 1)
+    Lime = (0 / 255, 255 / 255, 0 / 255, 1)
     GreenTransparent = (98 / 255, 178 / 255, 48 / 255, 0.3)
     Silver = (192 / 255, 192 / 255, 192 / 255, 1)
     Black = (0, 0, 0, 1)
 
     DarkBlue = (5 / 255, 5 / 255, 70 / 255, 1)
+    BrightBlue = (0 / 255, 0 / 255, 255 / 255, 1)
     Blue = (0, 153 / 255, 1, 1)
     LightBlue = (173 / 255, 216 / 255, 230 / 255, 1)
     BlueTransparent = (60 / 255, 170 / 255, 200 / 255, 0.6)

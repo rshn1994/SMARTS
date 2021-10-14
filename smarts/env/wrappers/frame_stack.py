@@ -42,15 +42,12 @@ class FrameStack(gym.Wrapper):
         Args:
             env (gym.Env): Gym environment to be wrapped.
             num_stack (int, optional): Number of frames to be stacked. Defaults to 3.
-            num_skip (int, optional): Frequency of frames, in the returned stacked frames. Defaults to 1.
+            num_skip (int, optional): Frequency of frames used in returned stacked frames. Defaults to 1.
         """
         assert num_stack > 1, f"Expected num_stack > 1, but got {num_stack}."
         assert num_skip > 0, f"Expected num_skip > 0, but got {num_skip}."
-        assert (
-            num_stack > num_skip
-        ), f"Expected num_stack > num_skip, but got num_stack={num_stack} and num_skip={num_skip}."
         super(FrameStack, self).__init__(env)
-        self._num_stack = num_stack
+        self._num_stack = (num_stack - 1) * num_skip + 1
         self._num_skip = num_skip
         self._frames = {
             key: deque(maxlen=self._num_stack) for key in self.env.agent_specs.keys()
