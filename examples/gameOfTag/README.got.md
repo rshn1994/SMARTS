@@ -63,21 +63,3 @@ $ PYTHONHASHSEED=0 python3.7 ./examples/gameOfTag/train.py
 $ tensorboard --logdir=/home/adai/workspaces/SMARTS/examples/gameOfTag/logs
 $ tensorboard --logdir=/home/adai/workspaces/training/got_2021_09_27_03_36/logs
 ```
-
-## Training
-1. got_2021_10_12_16_17
-- observation: two rgb images 
-
-1. got_2021_10_12_10_53
-- observation: two rgb images
-- subprocvecenv
-
-1. got_2021_10_12_18_16
-- observation: two rgb images; FrameStack(env=env, num_stack=5, num_skip=4)
-- subprocvecenv
-- ent_coef=0.01
-
-1. 
-- observation: four rgb images; FrameStack(env=env, num_stack=4, num_skip=1)
-- subprocvecenv
-- ent_coef=0.01
