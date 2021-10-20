@@ -38,8 +38,11 @@ def main(config):
         env_single.close()
 
     # Create the vectorized environment
-    num_env = config["env_para"]["num_env"]
-    env = SubprocVecEnv([make_env(config, i) for i in range(num_env)])
+    if mode == Mode.TRAIN:
+        num_env = config["env_para"]["num_env"]
+        env = SubprocVecEnv([make_env(config, i) for i in range(num_env)])
+    else:
+        env = make_env(config, 0)()
 
     # Tensorboard
     tb_path = Path(config["model_para"]["tensorboard_path"]).joinpath(
@@ -87,12 +90,10 @@ def main(config):
         print("[INFO] Evaluate")
         obs = env.reset()
         dones = False
-        while not dones:
-            # while True:
-            #     if dones:
-            #         obs = env.reset()
-            #         print("Env reset")
-            #         time.sleep(5)
+        while True:
+            if dones:
+                obs = env.reset()
+                print("Env reset")
             action, _states = model.predict(obs)
             obs, rewards, dones, info = env.step(action)
 
