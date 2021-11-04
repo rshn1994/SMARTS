@@ -506,7 +506,7 @@ def test_od_map_lane_offset():
     # point on lane
     point = (31.0, 2.0, 0)
     refline_pt = l0.to_lane_coord(point)
-    assert round(refline_pt.s, 2) == 31.0
+    assert round(refline_pt.s, 2) == 6.08
     assert round(refline_pt.t, 2) == 2.0
 
     offset = refline_pt.s
