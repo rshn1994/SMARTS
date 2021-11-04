@@ -847,9 +847,10 @@ class OpenDriveRoadNetwork(RoadMap):
             return super().curvature_radius_at_offset(offset, lookahead)
 
         def width_at_offset(self, lane_point_s: float) -> float:
+            offset = lane_point_s + self.road.s_pos
             inner_boundary, outer_boundary = self._lane_boundaries
-            t_outer = outer_boundary.calc_t(lane_point_s, self.road.s_pos, self.index)
-            t_inner = inner_boundary.calc_t(lane_point_s, self.road.s_pos, self.index)
+            t_outer = outer_boundary.calc_t(offset, self.road.s_pos, self.index)
+            t_inner = inner_boundary.calc_t(offset, self.road.s_pos, self.index)
             return abs(t_outer - t_inner)
 
         @lru_cache(maxsize=4)
