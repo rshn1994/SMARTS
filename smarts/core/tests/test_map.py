@@ -529,7 +529,7 @@ def test_od_map_lane_offset():
     point = (31.0, 4.5, 0)
     refline_pt = l0.to_lane_coord(point)
     assert round(refline_pt.s, 2) == 6.19
-    assert round(refline_pt.t, 2) == 4.19
+    assert round(refline_pt.t, 2) == 4.37
 
     offset = refline_pt.s
     assert l0.width_at_offset(offset) == 3.25
