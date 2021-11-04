@@ -539,7 +539,7 @@ def test_od_map_lane_offset():
 
     # check for locations (lane, offset tuples) within distance at this offset
     candidates = l0.project_along(offset, 20)
-    assert(len(candidates)) == 1
+    assert(len(candidates)) == 3
 
     l1 = road_map.lane_by_id("1_1_-2")
     assert l1
@@ -585,3 +585,7 @@ def test_od_map_lane_offset():
     assert round(l3.curvature_radius_at_offset(offset), 2) == 353.86
     assert l3.contains_point(point)
     assert l3.road.contains_point(point)
+
+    # check for locations (lane, offset tuples) within distance at this offset
+    candidates = l3.project_along(offset, 50)
+    assert (len(candidates)) == 3
