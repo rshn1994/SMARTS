@@ -516,7 +516,7 @@ def test_od_map_lane_offset():
     assert l0.road.contains_point(point)
 
     # lane edges on point
-    left_edge, right_edge = l1.edges_at_point(point)
+    left_edge, right_edge = l0.edges_at_point(point)
     assert (round(left_edge.x, 2), round(left_edge.y, 2)) == (120.0, 170.0)
     assert (round(right_edge.x, 2), round(right_edge.y, 2)) == (116.25, 170.0)
 
