@@ -517,10 +517,7 @@ def test_od_map_lane_offset():
 
     # lane edges on point
     left_edge, right_edge = l0.edges_at_point(point)
-    reference_line_vertices_len = int((len(l0.lane_polygon) - 1) / 2)
-    shape = l0.lane_polygon[:reference_line_vertices_len]
-    print(shape)
-    assert (round(left_edge.x, 2), round(left_edge.y, 2)) == (31.08, 170.0)
+    assert (round(left_edge.x, 2), round(left_edge.y, 2)) == (31.08, 0.13)
     assert (round(right_edge.x, 2), round(right_edge.y, 2)) == (116.25, 170.0)
 
     # # road edges on point
