@@ -239,7 +239,7 @@ def test_od_map_junction():
 
     # check for locations (lane, offset tuples) within distance at this offset
     candidates = l1.project_along(offset, 70)
-    assert (len(candidates)) == 3
+    assert (len(candidates)) == 5
 
     # point not on lane but on road
     point = (122.0, 170.0, 0)
@@ -379,7 +379,7 @@ def test_od_map_figure_eight():
 
     # check for locations (lane, offset tuples) within distance at this offset
     candidates = l1.project_along(offset, 300)
-    assert (len(candidates)) == 3
+    assert (len(candidates)) == 12
 
     # point not on lane but on road
     point = (163.48, 71.80, 0)
