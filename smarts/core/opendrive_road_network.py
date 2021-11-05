@@ -491,7 +491,8 @@ class OpenDriveRoadNetwork(RoadMap):
         ls_index = lane_elem.lane_section.idx
 
         if lane_link.predecessorId:
-            if lane_elem.lane_section.idx == 0:
+            road_id, section_id = None, None
+            if ls_index == 0:
                 # This is the first lane section, so get the first/last lane section of the predecessor road
                 road_predecessor = road_elem.link.predecessor
                 if road_predecessor and road_predecessor.elementType == "road":
@@ -505,20 +506,21 @@ class OpenDriveRoadNetwork(RoadMap):
             else:
                 # Otherwise, get the previous lane section of the current road
                 road_id = road_elem.id
-                section_id = lane_elem.lane_section.idx - 1
-
-            pred_lane_id = f"{road_id}_{section_id}_{lane_link.predecessorId}"
-            pred_lane = self.lane_by_id(pred_lane_id)
-            if lane.index < 0:
-                # Direction of lane is the same as the reference line
-                if pred_lane not in lane.incoming_lanes:
-                    lane.incoming_lanes.append(pred_lane)
-            else:
-                # Direction of lane is opposite the refline, so this is actually an outgoing lane
-                if pred_lane not in lane.outgoing_lanes:
-                    lane.outgoing_lanes.append(pred_lane)
+                section_id = ls_index - 1
+            if road_id is not None and section_id is not None:
+                pred_lane_id = f"{road_id}_{section_id}_{lane_link.predecessorId}"
+                pred_lane = self.lane_by_id(pred_lane_id)
+                if lane.index < 0:
+                    # Direction of lane is the same as the reference line
+                    if pred_lane not in lane.incoming_lanes:
+                        lane.incoming_lanes.append(pred_lane)
+                else:
+                    # Direction of lane is opposite the refline, so this is actually an outgoing lane
+                    if pred_lane not in lane.outgoing_lanes:
+                        lane.outgoing_lanes.append(pred_lane)
 
         if lane_link.successorId:
+            road_id, section_id = None, None
             if ls_index == len(road_elem.lanes.lane_sections) - 1:
                 # This is the last lane section, so get the first/last lane section of the successor road
                 road_successor = road_elem.link.successor
@@ -535,16 +537,17 @@ class OpenDriveRoadNetwork(RoadMap):
                 road_id = road_elem.id
                 section_id = ls_index + 1
 
-            succ_lane_id = f"{road_id}_{section_id}_{lane_link.successorId}"
-            succ_lane = self.lane_by_id(succ_lane_id)
-            if lane.index < 0:
-                # Direction of lane is the same as the reference line
-                if succ_lane not in lane.outgoing_lanes:
-                    lane.outgoing_lanes.append(succ_lane)
-            else:
-                # Direction of lane is opposite the refline, so this is actually an incoming lane
-                if succ_lane not in lane.incoming_lanes:
-                    lane.incoming_lanes.append(succ_lane)
+            if road_id is not None and section_id is not None:
+                succ_lane_id = f"{road_id}_{section_id}_{lane_link.successorId}"
+                succ_lane = self.lane_by_id(succ_lane_id)
+                if lane.index < 0:
+                    # Direction of lane is the same as the reference line
+                    if succ_lane not in lane.outgoing_lanes:
+                        lane.outgoing_lanes.append(succ_lane)
+                else:
+                    # Direction of lane is opposite the refline, so this is actually an incoming lane
+                    if succ_lane not in lane.incoming_lanes:
+                        lane.incoming_lanes.append(succ_lane)
 
     @property
     def source(self) -> str:
@@ -847,10 +850,10 @@ class OpenDriveRoadNetwork(RoadMap):
             return super().curvature_radius_at_offset(offset, lookahead)
 
         def width_at_offset(self, lane_point_s: float) -> float:
-            offset = lane_point_s + self.road.s_pos
+            road_offset = lane_point_s + self.road.s_pos
             inner_boundary, outer_boundary = self._lane_boundaries
-            t_outer = outer_boundary.calc_t(offset, self.road.s_pos, self.index)
-            t_inner = inner_boundary.calc_t(offset, self.road.s_pos, self.index)
+            t_outer = outer_boundary.calc_t(road_offset, self.road.s_pos, self.index)
+            t_inner = inner_boundary.calc_t(road_offset, self.road.s_pos, self.index)
             return abs(t_outer - t_inner)
 
         @lru_cache(maxsize=4)
