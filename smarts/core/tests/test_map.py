@@ -299,6 +299,15 @@ def test_od_map_junction():
         117.91,
     )
 
+    # nearest lane to a point
+    point = (109.0, 160.0, 0)
+    l4 = road_map.nearest_lane(point)
+    assert l4.lane_id == "0_0_4"
+    assert l4.road.road_id == "0_0"
+    assert l4.index == 4
+    assert not l4.road.contains_point(point)
+    assert not l4.is_drivable
+
 
 def test_od_map_figure_eight():
     root = path.join(Path(__file__).parent.absolute(), "maps")
