@@ -230,10 +230,9 @@ def test_od_map_junction():
 
     radius = 1.1 * l1.width_at_offset(offset)
     pt = l1.from_lane_coord(RefLinePoint(offset))
-    assert (round(pt.x, 2), round(pt.y, 2)) == (120.0, 170.0)
     nearby_lanes = road_map.nearest_lanes(pt, radius=radius)
     assert nearby_lanes
-    assert len(nearby_lanes)
+    assert len(nearby_lanes) == 2
     # on_lanes = l1.oncoming_lanes_at_offset(offset)
     # assert on_lanes
     # assert len(on_lanes) == 1
