@@ -234,6 +234,8 @@ def test_od_map_junction():
     vector = l1.vector_at_offset(offset)
     assert len(nearby_lanes) == 6
     for lane, _ in nearby_lanes:
+        if lane == l1:
+            continue
         lv = lane.vector_at_offset(offset)
         lane_angle = np.dot(vector, lv) / (np.linalg.norm(vector) * np.linalg.norm(lv))
         print(lane_angle)
