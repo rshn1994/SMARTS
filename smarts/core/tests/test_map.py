@@ -299,7 +299,7 @@ def test_od_map_junction():
         117.91,
     )
 
-    # nearest lane to a point
+    # nearest lane for a point outside road
     point = (109.0, 160.0, 0)
     l4 = road_map.nearest_lane(point)
     assert l4.lane_id == "0_0_4"
@@ -307,6 +307,15 @@ def test_od_map_junction():
     assert l4.index == 4
     assert not l4.road.contains_point(point)
     assert not l4.is_drivable
+
+    # nearest lane for a point inside road
+    point = (117.0, 150.0, 0)
+    l5 = road_map.nearest_lane(point)
+    assert l5.lane_id == "0_0_1"
+    assert l5.road.road_id == "0_0"
+    assert l5.index == 1
+    assert l5.road.contains_point(point)
+    assert l5.is_drivable
 
 
 def test_od_map_figure_eight():
