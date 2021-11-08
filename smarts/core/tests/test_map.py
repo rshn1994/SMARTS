@@ -453,8 +453,8 @@ def test_od_map_figure_eight():
     # nearest lanes
     point = (1.89, 0.79, 0)
     l5 = road_map.nearest_lane(point)
-    assert l5.lane_id == "513_0_-1"
-    assert l5.road.road_id == "513_0"
+    assert l5.lane_id == "510_0_-1"
+    assert l5.road.road_id == "510_0"
     assert l5.index == -1
     assert l5.road.contains_point(point)
     assert l5.is_drivable
