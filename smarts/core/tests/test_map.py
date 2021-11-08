@@ -227,6 +227,10 @@ def test_od_map_junction():
     assert l1.curvature_radius_at_offset(offset) == math.inf
     assert l1.contains_point(point)
     assert l1.road.contains_point(point)
+    on_lanes = l1.oncoming_lanes_at_offset(offset)
+    assert on_lanes
+    assert len(on_lanes) == 1
+    assert on_lanes[0].lane_id == "0_0_-1"
 
     # lane edges on point
     left_edge, right_edge = l1.edges_at_point(point)

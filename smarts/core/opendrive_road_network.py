@@ -222,6 +222,7 @@ class OpenDriveRoadNetwork(RoadMap):
                 for lane_elem in section_elem.leftLanes + section_elem.rightLanes:
                     lane_id = OpenDriveRoadNetwork._elem_id(lane_elem)
                     lane = OpenDriveRoadNetwork.Lane(
+                        self,
                         lane_id,
                         road,
                         lane_elem.id,
@@ -597,6 +598,7 @@ class OpenDriveRoadNetwork(RoadMap):
     class Lane(RoadMap.Lane, Surface):
         def __init__(
             self,
+            road_map,
             lane_id: str,
             road: RoadMap.Road,
             index: int,
@@ -605,6 +607,7 @@ class OpenDriveRoadNetwork(RoadMap):
             road_plan_view: PlanViewElement,
         ):
             super().__init__(lane_id)
+            self._map = road_map
             self._lane_id = lane_id
             self._road = road
             self._index = index
@@ -819,6 +822,26 @@ class OpenDriveRoadNetwork(RoadMap):
             point = world_point[:2]
             return offset_along_shape(point, shape)
 
+        @lru_cache(maxsize=16)
+        def oncoming_lanes_at_offset(self, offset: float) -> List[RoadMap.Lane]:
+            result = []
+            radius = 1.1 * self.width_at_offset(offset)
+            pt = self.from_lane_coord(RefLinePoint(offset))
+            nearby_lanes = self._map.nearest_lanes(pt, radius=radius)
+            if not nearby_lanes:
+                return result
+            my_vect = self.vector_at_offset(offset)
+            my_norm = np.linalg.norm(my_vect)
+            threshold = -0.995562  # cos(175*pi/180)
+            for lane, _ in nearby_lanes:
+                if lane == self:
+                    continue
+                lv = lane.vector_at_offset(offset)
+                lane_angle = np.dot(my_vect, lv) / (my_norm * np.linalg.norm(lv))
+                if lane_angle < threshold:
+                    result.append(lane)
+            return result
+
         @lru_cache(maxsize=8)
         def from_lane_coord(self, lane_point: RefLinePoint) -> Point:
             reference_line_vertices_len = int((len(self._lane_polygon) - 1) / 2)
@@ -996,6 +1019,10 @@ class OpenDriveRoadNetwork(RoadMap):
             else:
                 _, left_edge = leftmost_lane.edges_at_point(point)
             return left_edge, right_edge
+
+        @lru_cache(maxsize=16)
+        def oncoming_roads_at_point(self, point: Point) -> List[RoadMap.Road]:
+            return super().oncoming_roads_at_point(point)
 
         @lru_cache(maxsize=4)
         def shape(self, width: float = 0.0, buffer_width: float = 0.0) -> Polygon:
