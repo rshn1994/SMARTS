@@ -231,18 +231,15 @@ def test_od_map_junction():
 
     radius = 1.1 * l1.width_at_offset(offset)
     pt = l1.from_lane_coord(RefLinePoint(offset))
+
+    # oncoming lanes at this point
     nearby_lanes = road_map.nearest_lanes(pt, radius=radius)
-    vector = l1.vector_at_offset(offset)
-    for lane, _ in nearby_lanes:
-        if lane == l1:
-            continue
-        lv = lane.vector_at_offset(offset)
-        lane_angle = np.dot(vector, lv) / (np.linalg.norm(vector) * np.linalg.norm(lv))
-        print(lane_angle)
     on_lanes = l1.oncoming_lanes_at_offset(offset)
     assert on_lanes
-    # assert len(on_lanes) == 1
-    # assert on_lanes[0].lane_id == "0_0_-1"
+    assert len(on_lanes) == 3
+    assert on_lanes[0].lane_id == "0_0_-1"
+    assert on_lanes[1].lane_id == "0_0_-1"
+    assert on_lanes[2].lane_id == "0_0_-1"
 
     # lane edges on point
     left_edge, right_edge = l1.edges_at_point(point)
@@ -256,7 +253,7 @@ def test_od_map_junction():
 
     # check for locations (lane, offset tuples) within distance at this offset
     candidates = l1.project_along(offset, 70)
-    assert (len(candidates)) == 5
+    assert (len(candidates)) == 11
 
     # point not on lane but on road
     point = (122.0, 170.0, 0)
