@@ -1094,7 +1094,7 @@ class OpenDriveRoadNetwork(RoadMap):
             radius = max(10, 2 * self._default_lane_width)
         candidate_lanes = self._get_neighboring_lanes(point[0], point[1], r=radius)
         candidate_lanes.sort(key=lambda lane_dist_tup: lane_dist_tup[1])
-        return [(self.lane_by_id(lane.getID()), dist) for lane, dist in candidate_lanes]
+        return candidate_lanes
 
     @lru_cache(maxsize=16)
     def road_with_point(self, point: Point) -> RoadMap.Road:
