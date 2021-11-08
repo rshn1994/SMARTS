@@ -31,6 +31,7 @@ from smarts.core.default_map_factory import create_road_map
 from smarts.core.sumo_road_network import SumoRoadNetwork
 from smarts.core.coordinates import RefLinePoint
 
+
 @pytest.fixture
 def sumo_scenario():
     return Scenario(scenario_root="scenarios/intersections/4lane")
@@ -232,7 +233,6 @@ def test_od_map_junction():
     pt = l1.from_lane_coord(RefLinePoint(offset))
     nearby_lanes = road_map.nearest_lanes(pt, radius=radius)
     vector = l1.vector_at_offset(offset)
-    assert len(nearby_lanes) == 6
     for lane, _ in nearby_lanes:
         if lane == l1:
             continue

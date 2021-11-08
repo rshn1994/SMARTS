@@ -756,8 +756,13 @@ class OpenDriveRoadNetwork(RoadMap):
                 ys_inner.append(y_ref + (t_inner - width_offset) * math.sin(angle))
                 xs_outer.append(x_ref + (t_outer + width_offset) * math.cos(angle))
                 ys_outer.append(y_ref + (t_outer + width_offset) * math.sin(angle))
-            xs.extend(xs_inner + xs_outer[::-1] + [xs_inner[0]])
-            ys.extend(ys_inner + ys_outer[::-1] + [ys_inner[0]])
+
+            if self.index < 0:
+                xs.extend(xs_inner + xs_outer[::-1] + [xs_inner[0]])
+                ys.extend(ys_inner + ys_outer[::-1] + [ys_inner[0]])
+            else:
+                xs.extend(xs_inner[::-1] + xs_outer + [xs_inner[len(xs_inner) - 1]])
+                ys.extend(ys_inner[::-1] + ys_outer + [ys_inner[len(ys_inner) - 1]])
 
             assert len(xs) == len(ys)
             return list(zip(xs, ys))
@@ -789,6 +794,10 @@ class OpenDriveRoadNetwork(RoadMap):
                 xs_inner.append(x_ref + (t_inner + (width_at_s / 2)) * math.cos(angle))
                 ys_inner.append(y_ref + (t_inner + (width_at_s / 2)) * math.sin(angle))
 
+            if self.index > 0:
+                xs_inner = xs_inner[::-1]
+                ys_inner = ys_inner[::-1]
+
             return list(zip(xs_inner, ys_inner))
 
         @lru_cache(maxsize=8)
@@ -806,10 +815,10 @@ class OpenDriveRoadNetwork(RoadMap):
                 lane_point = self.to_lane_coord(point)
                 width_at_offset = self.width_at_offset(lane_point.s)
                 lane_elem_id = self._index
-                # t-direction is negative for right side and positive for left side of the
-                # inner boundary reference line, So the sign of lane_point.t and lane_elem_id should match
+                # t-direction is negative for right side and positive for left side of the inner boundary reference
+                # line of lane, So the sign of lane_point.t should be -ve for a point to lie in a lane
                 return (
-                    np.sign(lane_point.t) == np.sign(lane_elem_id)
+                    np.sign(lane_point.t) < 0
                     and abs(lane_point.t) <= width_at_offset
                     and 0 <= lane_point.s < self.length
                 )
@@ -1070,19 +1079,9 @@ class OpenDriveRoadNetwork(RoadMap):
                     leftmost_edge_vertices_len : len(leftmost_lane_buffered_polygon) - 1
                 ]
 
-            if np.sign(min_index) == np.sign(max_index):
-                road_polygon = (
-                    leftmost_edge_shape
-                    + rightmost_edge_shape
-                    + [leftmost_edge_shape[0]]
-                )
-
-            else:
-                road_polygon = (
-                    leftmost_edge_shape[::-1]
-                    + rightmost_edge_shape
-                    + [leftmost_edge_shape[-1]]
-                )
+            road_polygon = (
+                leftmost_edge_shape + rightmost_edge_shape + [leftmost_edge_shape[0]]
+            )
             return Polygon(road_polygon)
 
         def lane_at_index(self, index: int) -> RoadMap.Lane:
