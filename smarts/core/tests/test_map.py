@@ -22,14 +22,12 @@
 import math
 from os import path
 from pathlib import Path
-import numpy as np
 import pytest
 from smarts.core.coordinates import Point
 from smarts.core.opendrive_road_network import OpenDriveRoadNetwork
 from smarts.core.scenario import Scenario
 from smarts.core.default_map_factory import create_road_map
 from smarts.core.sumo_road_network import SumoRoadNetwork
-from smarts.core.coordinates import RefLinePoint
 
 
 @pytest.fixture
@@ -229,17 +227,13 @@ def test_od_map_junction():
     assert l1.contains_point(point)
     assert l1.road.contains_point(point)
 
-    radius = 1.1 * l1.width_at_offset(offset)
-    pt = l1.from_lane_coord(RefLinePoint(offset))
-
     # oncoming lanes at this point
-    nearby_lanes = road_map.nearest_lanes(pt, radius=radius)
     on_lanes = l1.oncoming_lanes_at_offset(offset)
     assert on_lanes
     assert len(on_lanes) == 3
     assert on_lanes[0].lane_id == "0_0_-1"
-    assert on_lanes[1].lane_id == "0_0_-1"
-    assert on_lanes[2].lane_id == "0_0_-1"
+    assert on_lanes[1].lane_id == "0_0_-2"
+    assert on_lanes[2].lane_id == "0_0_-3"
 
     # lane edges on point
     left_edge, right_edge = l1.edges_at_point(point)
