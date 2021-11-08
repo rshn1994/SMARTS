@@ -579,7 +579,7 @@ def test_od_map_lane_offset():
     assert round(refline_pt.t, 2) == -4.37
 
     offset = refline_pt.s
-    assert round(l0.width_at_offset(offset), 2) == 3.11
+    assert round(l0.width_at_offset(offset), 2) == 3.1
     assert round(l0.curvature_radius_at_offset(offset), 2) == 203.65
     assert not l0.contains_point(point)
     assert l0.road.contains_point(point)
