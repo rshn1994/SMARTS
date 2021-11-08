@@ -29,7 +29,7 @@ from smarts.core.opendrive_road_network import OpenDriveRoadNetwork
 from smarts.core.scenario import Scenario
 from smarts.core.default_map_factory import create_road_map
 from smarts.core.sumo_road_network import SumoRoadNetwork
-
+from smarts.core.coordinates import RefLinePoint
 
 @pytest.fixture
 def sumo_scenario():
@@ -227,10 +227,17 @@ def test_od_map_junction():
     assert l1.curvature_radius_at_offset(offset) == math.inf
     assert l1.contains_point(point)
     assert l1.road.contains_point(point)
-    on_lanes = l1.oncoming_lanes_at_offset(offset)
-    assert on_lanes
-    assert len(on_lanes) == 1
-    assert on_lanes[0].lane_id == "0_0_-1"
+
+    radius = 1.1 * l1.width_at_offset(offset)
+    pt = l1.from_lane_coord(RefLinePoint(offset))
+    assert (round(pt.x, 2), round(pt.y, 2)) == (120.0, 170.0)
+    nearby_lanes = road_map.nearest_lanes(pt, radius=radius)
+    assert nearby_lanes
+    assert len(nearby_lanes)
+    # on_lanes = l1.oncoming_lanes_at_offset(offset)
+    # assert on_lanes
+    # assert len(on_lanes) == 1
+    # assert on_lanes[0].lane_id == "0_0_-1"
 
     # lane edges on point
     left_edge, right_edge = l1.edges_at_point(point)
