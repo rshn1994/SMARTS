@@ -22,7 +22,7 @@
 import math
 from os import path
 from pathlib import Path
-
+import numpy as np
 import pytest
 from smarts.core.coordinates import Point
 from smarts.core.opendrive_road_network import OpenDriveRoadNetwork
@@ -231,10 +231,14 @@ def test_od_map_junction():
     radius = 1.1 * l1.width_at_offset(offset)
     pt = l1.from_lane_coord(RefLinePoint(offset))
     nearby_lanes = road_map.nearest_lanes(pt, radius=radius)
-    assert nearby_lanes
-    assert len(nearby_lanes) == 2
-    # on_lanes = l1.oncoming_lanes_at_offset(offset)
-    # assert on_lanes
+    vector = l1.vector_at_offset(offset)
+    assert len(nearby_lanes) == 6
+    for lane, _ in nearby_lanes:
+        lv = lane.vector_at_offset(offset)
+        lane_angle = np.dot(vector, lv) / (np.linalg.norm(vector) * np.linalg.norm(lv))
+        print(lane_angle)
+    on_lanes = l1.oncoming_lanes_at_offset(offset)
+    assert on_lanes
     # assert len(on_lanes) == 1
     # assert on_lanes[0].lane_id == "0_0_-1"
 
