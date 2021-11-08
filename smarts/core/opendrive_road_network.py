@@ -1096,6 +1096,15 @@ class OpenDriveRoadNetwork(RoadMap):
         candidate_lanes.sort(key=lambda lane_dist_tup: lane_dist_tup[1])
         return candidate_lanes
 
+    def nearest_lane(
+        self, point: Point, radius: float = None, include_junctions=True
+    ) -> RoadMap.Lane:
+        nearest_lanes = self.nearest_lanes(point, radius, include_junctions)
+        for lane, dist in nearest_lanes:
+            if lane.contains_point(point):
+                return lane
+        return nearest_lanes[0][0] if nearest_lanes else None
+
     @lru_cache(maxsize=16)
     def road_with_point(self, point: Point) -> RoadMap.Road:
         radius = max(5, 2 * self._default_lane_width)

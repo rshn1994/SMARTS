@@ -450,6 +450,15 @@ def test_od_map_figure_eight():
     assert len(l4_in_lanes) == 1
     assert l4_in_lanes[0].lane_id == "508_0_1"
 
+    # nearest lanes
+    point = (1.89, 0.79, 0)
+    l5 = road_map.nearest_lane(point)
+    assert l5.lane_id == "513_0_-1"
+    assert l5.road.road_id == "513_0"
+    assert l5.index == -1
+    assert l5.road.contains_point(point)
+    assert l5.is_drivable
+
 
 def test_od_map_lane_offset():
     root = path.join(Path(__file__).parent.absolute(), "maps")
@@ -620,3 +629,17 @@ def test_od_map_lane_offset():
     # check for locations (lane, offset tuples) within distance at this offset
     candidates = l3.project_along(offset, 50)
     assert (len(candidates)) == 3
+
+    # nearest lanes for a point in lane
+    point = (60.0, -2.38, 0)
+    l4 = road_map.nearest_lane(point)
+    assert l4.lane_id == "1_1_-2"
+    assert l4.road.road_id == "1_1"
+    assert l4.index == -2
+    assert l4.road.contains_point(point)
+    assert l4.is_drivable
+
+    # get the road for point containing it
+    point = (80.0, 1.3, 0)
+    r4 = road_map.road_with_point(point)
+    assert r4.road_id == "1_2"
