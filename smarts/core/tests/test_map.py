@@ -20,7 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 import math
-import numpy as np
 from os import path
 from pathlib import Path
 import pytest
@@ -28,7 +27,7 @@ from smarts.core.coordinates import Point
 from smarts.core.opendrive_road_network import OpenDriveRoadNetwork
 from smarts.core.scenario import Scenario
 from smarts.core.sumo_road_network import SumoRoadNetwork
-from smarts.core.coordinates import RefLinePoint
+
 
 @pytest.fixture
 def sumo_scenario():
