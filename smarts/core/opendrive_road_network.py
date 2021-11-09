@@ -17,48 +17,43 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+import heapq
 import logging
 import math
 import time
-from typing import Dict, List, Tuple, Set, Sequence
 from dataclasses import dataclass
-import math
-import numpy as np
-from lxml import etree
 from functools import lru_cache
-from queue import Queue
+from typing import Dict, List, Sequence, Set, Tuple
+
+import numpy as np
 from cached_property import cached_property
-from opendrive2lanelet.opendriveparser.elements.opendrive import (
-    OpenDrive as OpenDriveElement,
-)
-from opendrive2lanelet.opendriveparser.elements.geometry import Line as LineGeometry
+from lxml import etree
+from opendrive2lanelet.opendriveparser.elements.geometry import \
+    Line as LineGeometry
+from opendrive2lanelet.opendriveparser.elements.opendrive import \
+    OpenDrive as OpenDriveElement
 from opendrive2lanelet.opendriveparser.elements.road import Road as RoadElement
-from opendrive2lanelet.opendriveparser.elements.roadLanes import Lane as LaneElement
-from opendrive2lanelet.opendriveparser.elements.roadLanes import (
-    LaneSection as LaneSectionElement,
-)
-from opendrive2lanelet.opendriveparser.elements.roadLanes import (
-    LaneOffset as LaneOffsetElement,
-)
-from opendrive2lanelet.opendriveparser.elements.roadLanes import (
-    LaneWidth as LaneWidthElement,
-)
-from opendrive2lanelet.opendriveparser.elements.roadPlanView import (
-    PlanView as PlanViewElement,
-)
+from opendrive2lanelet.opendriveparser.elements.roadLanes import \
+    Lane as LaneElement
+from opendrive2lanelet.opendriveparser.elements.roadLanes import \
+    LaneOffset as LaneOffsetElement
+from opendrive2lanelet.opendriveparser.elements.roadLanes import \
+    LaneSection as LaneSectionElement
+from opendrive2lanelet.opendriveparser.elements.roadLanes import \
+    LaneWidth as LaneWidthElement
+from opendrive2lanelet.opendriveparser.elements.roadPlanView import \
+    PlanView as PlanViewElement
 from opendrive2lanelet.opendriveparser.parser import parse_opendrive
 from shapely.geometry import Polygon
 
 from smarts.core.road_map import RoadMap
-from smarts.core.utils.math import (
-    CubicPolynomial,
-    constrain_angle,
-    position_at_shape_offset,
-    offset_along_shape,
-    get_linear_segments_for_range,
-    distance_point_to_polygon,
-)
-from .coordinates import BoundingBox, Heading, Point, Pose, RefLinePoint
+from smarts.core.utils.math import (CubicPolynomial, constrain_angle,
+                                    distance_point_to_polygon,
+                                    get_linear_segments_for_range,
+                                    offset_along_shape,
+                                    position_at_shape_offset)
+
+from .coordinates import BoundingBox, Point, Pose, RefLinePoint
 
 
 @dataclass
@@ -732,39 +727,6 @@ class OpenDriveRoadNetwork(RoadMap):
             assert len(xs) == len(ys)
             return list(zip(xs, ys))
 
-        @cached_property
-        def compute_central_line_lane_polygon(
-            self,
-        ) -> List[Tuple[float, float]]:
-            section_len = self._length
-            section_s_start = self.road.s_pos
-            section_s_end = section_s_start + section_len
-
-            inner_boundary, outer_boundary = self._lane_boundaries
-            inner_s_vals = inner_boundary.to_linear_segments(
-                section_s_start, section_s_end
-            )
-            outer_s_vals = outer_boundary.to_linear_segments(
-                section_s_start, section_s_end
-            )
-            s_vals = sorted(set(inner_s_vals + outer_s_vals))
-
-            xs_inner, ys_inner = [], []
-            for s in s_vals:
-                t_inner = inner_boundary.calc_t(s, section_s_start, self.index)
-                t_outer = outer_boundary.calc_t(s, section_s_start, self.index)
-                (x_ref, y_ref), heading = self._plan_view.calc(s)
-                angle = self.t_angle(heading)
-                width_at_s = t_outer - t_inner
-                xs_inner.append(x_ref + (t_inner + (width_at_s / 2)) * math.cos(angle))
-                ys_inner.append(y_ref + (t_inner + (width_at_s / 2)) * math.sin(angle))
-
-            if self.index > 0:
-                xs_inner = xs_inner[::-1]
-                ys_inner = ys_inner[::-1]
-
-            return list(zip(xs_inner, ys_inner))
-
         @lru_cache(maxsize=8)
         def project_along(
             self, start_offset: float, distance: float
@@ -1109,20 +1071,24 @@ class OpenDriveRoadNetwork(RoadMap):
 
     @staticmethod
     def _shortest_path(start: RoadMap.Road, end: RoadMap.Road) -> List[RoadMap.Road]:
-        frontier = Queue()
-        frontier.put(start)
+        queue = [(start.length, start.road_id, start)]
         came_from = dict()
         came_from[start] = None
+        cost_so_far = dict()
+        cost_so_far[start] = start.length
 
-        # Breadth-first search
-        while not frontier.empty():
-            current: RoadMap.Road = frontier.get()
+        # Dijkstra’s Algorithm
+        while queue:
+            (_, _, current) = heapq.heappop(queue)
+            current: RoadMap.Road
             if current == end:
                 break
             for out_road in current.outgoing_roads:
-                if out_road not in came_from:
-                    frontier.put(out_road)
+                new_cost = cost_so_far[current] + out_road.length
+                if out_road not in cost_so_far or new_cost < cost_so_far[out_road]:
+                    cost_so_far[out_road] = new_cost
                     came_from[out_road] = current
+                    heapq.heappush(queue, (new_cost, out_road.road_id, out_road))
 
         # Reconstruct path
         current = end
