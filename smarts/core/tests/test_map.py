@@ -401,14 +401,17 @@ def test_od_map_figure_eight():
     assert round(l1.curvature_radius_at_offset(offset), 2) == 80.0
     assert l1.contains_point(point)
     assert l1.road.contains_point(point)
+    lv1 = l1.vector_at_offset(offset)
 
     # oncoming lanes at this point
     lane_1 = road_map.lane_by_id("508_0_1")
     refline_pt = lane_1.to_lane_coord(point)
     assert round(refline_pt.s, 2) == 183.42
     assert round(refline_pt.t, 2) == 1.75
-    lv = lane_1.vector_at_offset(refline_pt.s)
-    assert lv == 21
+    lv2 = lane_1.vector_at_offset(refline_pt.s)
+    lane_angle = np.dot(lv2, lv1) / (np.linalg.norm(lv1) * np.linalg.norm(lv2))
+    print(lane_angle)
+    assert lane_angle < 0
     # radius = 1.1 * l1.width_at_offset(offset)
     # pt = l1.from_lane_coord(RefLinePoint(offset))
     # nearby_lanes = road_map.nearest_lanes(pt, radius=radius)
