@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 import math
+import numpy as np
 from os import path
 from pathlib import Path
 import pytest
@@ -27,7 +28,7 @@ from smarts.core.coordinates import Point
 from smarts.core.opendrive_road_network import OpenDriveRoadNetwork
 from smarts.core.scenario import Scenario
 from smarts.core.sumo_road_network import SumoRoadNetwork
-
+from smarts.core.coordinates import RefLinePoint
 
 @pytest.fixture
 def sumo_scenario():
@@ -402,6 +403,15 @@ def test_od_map_figure_eight():
     assert l1.road.contains_point(point)
 
     # oncoming lanes at this point
+    radius = 1.1 * l1.width_at_offset(offset)
+    pt = l1.from_lane_coord(RefLinePoint(offset))
+    nearby_lanes = road_map.nearest_lanes(pt, radius=radius)
+    for lane, dist in nearby_lanes:
+        if lane == l1:
+            continue
+        print(lane.lane_id)
+        # lv = lane.vector_at_offset(offset)
+        # lane_angle = np.dot(l1.vector_at_offset(offset), lv) / (np.linalg.norm(l1.vector_at_offset(offset)) * np.linalg.norm(lv))
     on_lanes = l1.oncoming_lanes_at_offset(offset)
     assert on_lanes
     assert len(on_lanes) == 3
