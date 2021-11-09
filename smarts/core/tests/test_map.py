@@ -707,4 +707,3 @@ def test_od_map_motorway():
         "18_1",
         "6_0",
     ]
-

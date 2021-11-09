@@ -77,7 +77,11 @@ class LaneBoundary:
             if type(geom) == LineGeometry:
                 s_vals.extend([geom_start, geom_end])
             else:
-                s_vals.extend(get_linear_segments_for_range(geom_start, geom_end, self.segment_size))
+                s_vals.extend(
+                    get_linear_segments_for_range(
+                        geom_start, geom_end, self.segment_size
+                    )
+                )
             geom_start = geom_start + geom.length
         return [s for s in s_vals if s_start <= s <= s_end]
 
@@ -1131,13 +1135,15 @@ class OpenDriveRoadNetwork(RoadMap):
         return path
 
     def generate_routes(
-            self,
-            start_road: RoadMap.Road,
-            end_road: RoadMap.Road,
-            via: Sequence[RoadMap.Road] = None,
-            max_to_gen: int = 1,
+        self,
+        start_road: RoadMap.Road,
+        end_road: RoadMap.Road,
+        via: Sequence[RoadMap.Road] = None,
+        max_to_gen: int = 1,
     ) -> List[RoadMap.Route]:
-        assert max_to_gen == 1, "multiple route generation not yet supported for OpenDRIVE"
+        assert (
+            max_to_gen == 1
+        ), "multiple route generation not yet supported for OpenDRIVE"
         newroute = OpenDriveRoadNetwork.Route(self)
         result = [newroute]
 
@@ -1152,10 +1158,7 @@ class OpenDriveRoadNetwork(RoadMap):
             if not next_road:
                 route_roads.append(cur_road)
                 break
-            sub_route = (
-                    OpenDriveRoadNetwork._shortest_path(cur_road, next_road)
-                    or []
-            )
+            sub_route = OpenDriveRoadNetwork._shortest_path(cur_road, next_road) or []
             if len(sub_route) < 2:
                 self._log.warning(
                     f"Unable to find valid path between {(cur_road.road_id, next_road.road_id)}."
@@ -1168,6 +1171,9 @@ class OpenDriveRoadNetwork(RoadMap):
         for road in route_roads:
             newroute.add_road(road)
         return result
+
+    def empty_route(self) -> RoadMap.Route:
+        return OpenDriveRoadNetwork.Route(self)
 
     class Route(RoadMap.Route):
         def __init__(self, road_map):
