@@ -409,9 +409,9 @@ def test_od_map_figure_eight():
     for lane, dist in nearby_lanes:
         if lane == l1:
             continue
-        print(lane.lane_id)
-        # lv = lane.vector_at_offset(offset)
-        # lane_angle = np.dot(l1.vector_at_offset(offset), lv) / (np.linalg.norm(l1.vector_at_offset(offset)) * np.linalg.norm(lv))
+        lv = lane.vector_at_offset(offset)
+        lane_angle = np.dot(l1.vector_at_offset(offset), lv) / (np.linalg.norm(l1.vector_at_offset(offset)) * np.linalg.norm(lv))
+        print(lane_angle)
     on_lanes = l1.oncoming_lanes_at_offset(offset)
     assert on_lanes
     assert len(on_lanes) == 3
