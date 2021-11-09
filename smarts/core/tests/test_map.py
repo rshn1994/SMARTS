@@ -407,7 +407,8 @@ def test_od_map_figure_eight():
     refline_pt = lane_1.to_lane_coord(point)
     assert round(refline_pt.s, 2) == 183.42
     assert round(refline_pt.t, 2) == 1.75
-
+    lv = lane_1.vector_at_offset(refline_pt.s)
+    assert lv == 21
     # radius = 1.1 * l1.width_at_offset(offset)
     # pt = l1.from_lane_coord(RefLinePoint(offset))
     # nearby_lanes = road_map.nearest_lanes(pt, radius=radius)
