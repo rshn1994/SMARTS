@@ -769,7 +769,7 @@ class OpenDriveRoadNetwork(RoadMap):
             my_norm = np.linalg.norm(my_vect)
             threshold = -0.995562  # cos(175*pi/180)
             for lane, _ in nearby_lanes:
-                if lane == self or np.sign(lane.index) == np.sign(self.index):
+                if lane == self:
                     continue
                 lane_refline_pt = lane.to_lane_coord(pt)
                 lv = lane.vector_at_offset(lane_refline_pt.s)
