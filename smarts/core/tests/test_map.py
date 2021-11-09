@@ -411,7 +411,7 @@ def test_od_map_figure_eight():
     lv2 = lane_1.vector_at_offset(refline_pt.s)
     lane_angle = np.dot(lv2, lv1) / (np.linalg.norm(lv1) * np.linalg.norm(lv2))
     print(lane_angle)
-    assert lane_angle < 0
+    assert lane_angle > 0
     # radius = 1.1 * l1.width_at_offset(offset)
     # pt = l1.from_lane_coord(RefLinePoint(offset))
     # nearby_lanes = road_map.nearest_lanes(pt, radius=radius)
