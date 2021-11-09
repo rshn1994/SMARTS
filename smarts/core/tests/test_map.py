@@ -647,8 +647,9 @@ def test_od_map_lane_offset():
     # oncoming lanes at this point
     on_lanes = l3.oncoming_lanes_at_offset(offset)
     assert on_lanes
-    assert len(on_lanes) == 3
+    assert len(on_lanes) == 2
     assert on_lanes[0].lane_id == "1_1_1"
+    assert on_lanes[0].lane_id == "1_1_2"
 
     # check for locations (lane, offset tuples) within distance at this offset
     candidates = l3.project_along(offset, 50)
