@@ -329,7 +329,7 @@ def test_od_map_junction():
     # distance between points along route
     start_point = Point(x=118.0, y=150.0, z=0.0)
     end_point = Point(x=190.0, y=118.0, z=0.0)
-    assert route_0_to_13[0].distance_between(start_point, end_point) == 120
+    assert round(route_0_to_13[0].distance_between(start_point, end_point), 2) == 95.93
     # project along route
     candidates = route_0_to_13[0].project_along(start_point, 100)
     assert len(candidates) == 3
