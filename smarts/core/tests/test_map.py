@@ -339,10 +339,11 @@ def test_od_map_junction():
     # distance between points along route
     start_point = Point(x=150.0, y=121.0, z=0.0)
     end_point = Point(x=122.0, y=180.0, z=0.0)
-    assert round(route_13_to_0[0].distance_between(start_point, end_point), 2) == 95.93
+    assert round(route_13_to_0[0].distance_between(start_point, end_point), 2) == 84.44
     # project along route
     candidates = route_13_to_0[0].project_along(start_point, 100)
     assert len(candidates) == 8
+
 
 def test_od_map_figure_eight():
     root = path.join(Path(__file__).parent.absolute(), "maps")
