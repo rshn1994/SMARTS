@@ -1083,6 +1083,7 @@ class OpenDriveRoadNetwork(RoadMap):
         came_from[start] = None
         cost_so_far = dict()
         cost_so_far[start] = start.length
+        current = None
 
         # Dijkstra’s Algorithm
         while queue:
@@ -1209,10 +1210,6 @@ class OpenDriveRoadNetwork(RoadMap):
             start_offset = cand_start_lane.offset_along_lane(start)
             end_offset = cand_end_lane.offset_along_lane(end)
             if start_road == end_road:
-                # if cand_end_lane.index > 0:
-                #     end_offset = cand_end_lane.length - end_offset
-                # if cand_start_lane.index > 0:
-                #     start_offset = cand_start_lane.length - start_offset
                 return end_offset - start_offset
             negate = False
             if sind > eind:
