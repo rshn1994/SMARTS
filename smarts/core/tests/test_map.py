@@ -762,7 +762,7 @@ def test_od_map_motorway():
     end_point = Point(x=492.62, y=428.18, z=0.0)
     assert round(route_6_to_40[0].distance_between(start_point, end_point), 2) == 761.66
     # project along route
-    candidates = route_6_to_40[0].project_along(start_point, 200)
+    candidates = route_6_to_40[0].project_along(start_point, 600)
     assert len(candidates) == 5
 
     route_6_to_34_via_19 = road_map.generate_routes(
