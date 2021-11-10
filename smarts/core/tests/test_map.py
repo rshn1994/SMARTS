@@ -712,7 +712,7 @@ def test_od_map_lane_offset():
     assert round(route[0].distance_between(start_point, end_point), 2) == 67.48
     # project along route
     candidates = route[0].project_along(start_point, 70)
-    assert len(candidates) == 8
+    assert len(candidates) == 5
 
 
 def test_od_map_motorway():
@@ -757,12 +757,20 @@ def test_od_map_motorway():
         "8_0",
         "40_0",
     ]
+    # distance between points along route
+    start_point = Point(x=47.0, y=2.0, z=0.0)
+    end_point = Point(x=492.62, y=428.18, z=0.0)
+    assert round(route_6_to_40[0].distance_between(start_point, end_point), 2) == 67.48
+    # project along route
+    candidates = route_6_to_40[0].project_along(start_point, 200)
+    assert len(candidates) == 5
 
     route_6_to_34_via_19 = road_map.generate_routes(
         road_map.road_by_id("6_0"),
         road_map.road_by_id("34_0"),
         [road_map.road_by_id("19_0"), road_map.road_by_id("17_0")],
     )
+
     assert [r.road_id for r in route_6_to_34_via_19[0].roads] == [
         "6_0",
         "18_1",
