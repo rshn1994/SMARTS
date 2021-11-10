@@ -827,4 +827,4 @@ def test_od_map_motorway():
     )
     # project along route
     candidates = route_34_to_6[0].project_along(start_point, 600)
-    assert len(candidates) == 4
+    assert len(candidates) == 5
