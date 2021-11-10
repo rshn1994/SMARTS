@@ -759,7 +759,7 @@ def test_od_map_motorway():
     ]
     # distance between points along route
     start_point = Point(x=47.0, y=2.0, z=0.0)
-    end_point = Point(x=492.62, y=428.18, z=0.0)
+    end_point = Point(x=222.09, y=998.12, z=0.0)
     assert round(route_6_to_40[0].distance_between(start_point, end_point), 2) == 67.48
     # project along route
     candidates = route_6_to_40[0].project_along(start_point, 200)
