@@ -709,7 +709,7 @@ def test_od_map_lane_offset():
     # distance between points along route
     start_point = Point(x=17.56, y=-1.67, z=0.0)
     end_point = Point(x=89.96, y=2.15, z=0.0)
-    assert round(route[0].distance_between(start_point, end_point), 2) == 95.93
+    assert round(route[0].distance_between(start_point, end_point), 2) == 67.48
     # project along route
     candidates = route[0].project_along(start_point, 70)
     assert len(candidates) == 8
