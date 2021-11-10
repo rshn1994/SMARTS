@@ -326,6 +326,14 @@ def test_od_map_junction():
     route_0_to_13 = road_map.generate_routes(road_0, road_13)
     assert [r.road_id for r in route_0_to_13[0].roads] == ["0_0", "15_0", "13_0"]
 
+    # distance between points along route
+    start_point = Point(x=118.0, y=150.0, z=0.0)
+    end_point = Point(x=190.0, y=118.0, z=0.0)
+    assert route_0_to_13[0].distance_between(start_point, end_point) == 120
+    # project along route
+    candidates = route_0_to_13[0].project_along(start_point, 100)
+    assert len(candidates) == 3
+
     route_13_to_0 = road_map.generate_routes(road_13, road_0)
     assert [r.road_id for r in route_13_to_0[0].roads] == ["13_0", "9_0", "0_0"]
 
