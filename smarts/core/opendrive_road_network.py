@@ -624,7 +624,7 @@ class OpenDriveRoadNetwork(RoadMap):
 
         @property
         def is_drivable(self) -> bool:
-            # all roads on Sumo road networks are drivable
+            # Not all lanes on OpenDRIVE roads are drivable
             raise NotImplementedError
 
     class Lane(RoadMap.Lane, Surface):
