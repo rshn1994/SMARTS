@@ -36,7 +36,7 @@ from trimesh.exchange import gltf
 from .coordinates import BoundingBox, Heading, Point, Pose, RefLinePoint
 from .road_map import RoadMap, Waypoint
 from .sumo_lanepoints import LinkedLanePoint, SumoLanePoints
-from .utils.geometry import buffered_shape
+from .utils.geometry import buffered_shape, triangulate_polygon
 from .utils.math import inplace_unwrap, radians_to_vec, vec_2d
 
 from smarts.core.utils.sumo import sumolib  # isort:skip
@@ -1000,14 +1000,6 @@ class SumoRoadNetwork(RoadMap):
                         lane_shape = Polygon(snap(lane_shape, nl_shape, snap_threshold))
             lane_to_poly[lane_id] = lane_shape
 
-    @staticmethod
-    def _triangulate(polygon):
-        return [
-            tri_face
-            for tri_face in triangulate(polygon)
-            if tri_face.centroid.within(polygon)
-        ]
-
     def _make_glb_from_polys(self, polygons):
         scene = trimesh.Scene()
         vertices, faces = [], []
@@ -1026,7 +1018,7 @@ class SumoRoadNetwork(RoadMap):
                     vertices.append(p)
                     point_dict[p] = current_point_index
                     current_point_index += 1
-            triangles = SumoRoadNetwork._triangulate(poly)
+            triangles = triangulate_polygon(poly)
             for triangle in triangles:
                 face = np.array(
                     [point_dict.get((x, y, 0), -1) for x, y in triangle.exterior.coords]
