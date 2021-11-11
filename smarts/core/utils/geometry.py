@@ -77,11 +77,11 @@ def generate_mesh_from_polygons(polygons: List[Polygon]) -> trimesh.Trimesh:
             if -1 not in face:
                 faces.append(face)
 
-        mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
+    mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
 
-        # Trimesh doesn't support a coordinate-system="z-up" configuration, so we
-        # have to apply the transformation manually.
-        mesh.apply_transform(
-            trimesh.transformations.rotation_matrix(math.pi / 2, [-1, 0, 0])
-        )
-        return mesh
+    # Trimesh doesn't support a coordinate-system="z-up" configuration, so we
+    # have to apply the transformation manually.
+    mesh.apply_transform(
+        trimesh.transformations.rotation_matrix(math.pi / 2, [-1, 0, 0])
+    )
+    return mesh
