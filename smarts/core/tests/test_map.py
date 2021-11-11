@@ -821,10 +821,7 @@ def test_od_map_motorway():
     # distance between points along route
     start_point = Point(x=493.70, y=1528.79, z=0.0)
     end_point = Point(x=192.60, y=1001.47, z=0.0)
-    assert (
-        round(route_34_to_6[0].distance_between(start_point, end_point), 2)
-        == 1249.2
-    )
+    assert round(route_34_to_6[0].distance_between(start_point, end_point), 2) == 1249.2
     # project along route
     candidates = route_34_to_6[0].project_along(start_point, 600)
     assert len(candidates) == 5

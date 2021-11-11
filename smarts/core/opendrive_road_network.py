@@ -24,8 +24,10 @@ import random
 import time
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Dict, List, Sequence, Set, Tuple
-
+from typing import Dict, List, Sequence, Set, Tuple, Optional
+import trimesh
+import trimesh.scene
+from trimesh.exchange import gltf
 import numpy as np
 from cached_property import cached_property
 from lxml import etree
@@ -61,6 +63,35 @@ from smarts.core.utils.math import (
 )
 
 from .coordinates import BoundingBox, Point, Pose, RefLinePoint
+from smarts.core.utils.geometry import generate_mesh_from_polygons
+
+
+def _convert_camera(camera):
+    result = {
+        "name": camera.name,
+        "type": "perspective",
+        "perspective": {
+            "aspectRatio": camera.fov[0] / camera.fov[1],
+            "yfov": np.radians(camera.fov[1]),
+            "znear": float(camera.z_near),
+            # HACK: The trimesh gltf export doesn't include a zfar which Panda3D GLB
+            #       loader expects. Here we override to make loading possible.
+            "zfar": float(camera.z_near + 100),
+        },
+    }
+    return result
+
+
+gltf._convert_camera = _convert_camera
+
+
+class _GLBData:
+    def __init__(self, bytes_):
+        self._bytes = bytes_
+
+    def write_glb(self, output_path):
+        with open(output_path, "wb") as f:
+            f.write(self._bytes)
 
 
 @dataclass
@@ -549,6 +580,86 @@ class OpenDriveRoadNetwork(RoadMap):
             min_pt=Point(x=min(x_mins), y=min(y_mins)),
             max_pt=Point(x=max(x_maxs), y=max(y_maxs)),
         )
+
+    def to_glb(self, at_path):
+        """build a glb file for camera rendering and envision"""
+        glb = self._make_glb_from_polys()
+        glb.write_glb(at_path)
+
+    def _make_glb_from_polys(self):
+        scene = trimesh.Scene()
+        polygons = []
+        for lane_id in self._lanes:
+            lane = self._lanes[lane_id]
+            polygons.append(lane.shape())
+
+        mesh = generate_mesh_from_polygons(polygons)
+
+        # Attach additional information for rendering as metadata in the map glb
+        # <2D-BOUNDING_BOX>: four floats separated by ',' (<FLOAT>,<FLOAT>,<FLOAT>,<FLOAT>),
+        # which describe x-minimum, y-minimum, x-maximum, and y-maximum
+        metadata = {
+            "bounding_box": (
+                self.bounding_box.min_pt.x,
+                self.bounding_box.min_pt.y,
+                self.bounding_box.max_pt.x,
+                self.bounding_box.max_pt.y,
+            )
+        }
+
+        # lane markings information
+        lane_dividers, edge_dividers = self._compute_traffic_dividers()
+        metadata["lane_dividers"] = lane_dividers
+        metadata["edge_dividers"] = edge_dividers
+
+        mesh.visual = trimesh.visual.TextureVisuals(
+            material=trimesh.visual.material.PBRMaterial()
+        )
+
+        scene.add_geometry(mesh)
+        return _GLBData(gltf.export_glb(scene, extras=metadata, include_normals=True))
+
+    def _compute_traffic_dividers(self, threshold=1):
+        lane_dividers = []  # divider between lanes with same traffic direction
+        edge_dividers = []  # divider between roads sharing common border
+        edge_borders = []
+        for road_id in self._roads:
+            road = self._roads[road_id]
+            min_index, max_index = float("inf"), float("-inf")
+            for lane in road.lanes:
+                if lane.index < min_index:
+                    min_index = lane.index
+                if lane.index > max_index:
+                    max_index = lane.index
+
+            for lane in road.lanes:
+                left_border_vertices_len = int((len(lane.lane_polygon) - 1) / 2)
+                left_side = lane.lane_polygon[:left_border_vertices_len]
+                right_side = lane.lane_polygon[
+                    left_border_vertices_len : (len(lane.lane_polygon) - 1)
+                ]
+                if lane.index not in [1, -1]:
+                    lane_dividers.append(left_side)
+                if lane.index == min_index:
+                    edge_borders.append(left_side)
+                if lane.index == max_index:
+                    edge_borders.append(right_side)
+
+        # The edge borders that overlapped in positions form an edge divider
+        for i in range(len(edge_borders) - 1):
+            for j in range(i + 1, len(edge_borders)):
+                edge_border_i = np.array(
+                    [edge_borders[i][0], edge_borders[i][-1]]
+                )  # start and end position
+                edge_border_j = np.array(
+                    [edge_borders[j][-1], edge_borders[j][0]]
+                )  # start and end position with reverse traffic direction
+
+                # The edge borders of two lanes do not always overlap perfectly, thus relax the tolerance threshold to 1
+                if np.linalg.norm(edge_border_i - edge_border_j) < threshold:
+                    edge_dividers.append(edge_borders[i])
+
+        return lane_dividers, edge_dividers
 
     class Surface(RoadMap.Surface):
         def __init__(self, surface_id: str):
