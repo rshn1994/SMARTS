@@ -593,9 +593,9 @@ class OpenDriveRoadNetwork(RoadMap):
                 ]
                 if lane.index not in [1, -1]:
                     lane_dividers.append(left_side)
-                if lane.index == min_index:
+                if abs(lane.index) == min_index:
                     edge_borders.append(left_side)
-                if lane.index == max_index:
+                if abs(lane.index) == max_index:
                     edge_borders.append(right_side)
 
         # The edge borders that overlapped in positions form an edge divider
