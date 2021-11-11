@@ -645,10 +645,10 @@ class OpenDriveRoadNetwork(RoadMap):
             road = self._roads[road_id]
             min_index, max_index = float("inf"), float("-inf")
             for lane in road.lanes:
-                if lane.index < min_index:
-                    min_index = lane.index
-                if lane.index > max_index:
-                    max_index = lane.index
+                if abs(lane.index) < min_index:
+                    min_index = abs(lane.index)
+                if abs(lane.index) > max_index:
+                    max_index = abs(lane.index)
 
             for lane in road.lanes:
                 left_border_vertices_len = int((len(lane.lane_polygon) - 1) / 2)
