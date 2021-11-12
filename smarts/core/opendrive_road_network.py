@@ -869,13 +869,14 @@ class OpenDriveRoadNetwork(RoadMap):
 
         @lru_cache(8)
         def vector_at_offset(self, start_offset: float) -> np.ndarray:
-            road_offset = self.road.s_pos + start_offset
-            (x_ref, y_ref), heading = self._plan_view.calc(road_offset)
-            vector_at_s = np.array(Point(x=math.cos(heading), y=math.sin(heading)))
-            if self.index < 0:
-                return vector_at_s
-            else:
-                return -1 * vector_at_s
+            return super().vector_at_offset(start_offset)
+            # road_offset = self.road.s_pos + start_offset
+            # (x_ref, y_ref), heading = self._plan_view.calc(road_offset)
+            # vector_at_s = np.array(Point(x=math.cos(heading), y=math.sin(heading)))
+            # if self.index < 0:
+            #     return vector_at_s
+            # else:
+            #     return -1 * vector_at_s
 
         @lru_cache(maxsize=8)
         def center_pose_at_point(self, point: Point) -> Pose:

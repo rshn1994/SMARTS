@@ -286,11 +286,15 @@ class RoadMap:
                 path_stack = new_stack
             return result
 
-        def vector_at_offset(self, start_offset: float) -> np.ndarray:
-            raise NotImplementedError()
-
-        ## The next 4 methods are "reference" implementations for convenience.
+        ## The next 6 methods are "reference" implementations for convenience.
         ## Derived classes may want to extend as well as add a cache.
+
+        def vector_at_offset(self, start_offset: float) -> np.ndarray:
+            add_offset = 1  # a little further down the lane
+            end_offset = start_offset + add_offset
+            p1 = self.from_lane_coord(RefLinePoint(s=start_offset))
+            p2 = self.from_lane_coord(RefLinePoint(s=end_offset))
+            return np.array(p2) - np.array(p1)
 
         def to_lane_coord(self, world_point: Point) -> RefLinePoint:
             s = self.offset_along_lane(world_point)

@@ -445,11 +445,7 @@ class SumoRoadNetwork(RoadMap):
 
         @lru_cache(8)
         def vector_at_offset(self, start_offset: float) -> np.ndarray:
-            add_offset = 1  # a little further down the lane
-            end_offset = start_offset + add_offset
-            p1 = self.from_lane_coord(RefLinePoint(s=start_offset))
-            p2 = self.from_lane_coord(RefLinePoint(s=end_offset))
-            return np.array(p2) - np.array(p1)
+            return super().vector_at_offset(start_offset)
 
         @lru_cache(maxsize=8)
         def center_pose_at_point(self, point: Point) -> Pose:
