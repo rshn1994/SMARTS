@@ -24,7 +24,7 @@ import random
 import time
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Dict, List, Sequence, Set, Tuple, Optional
+from typing import Dict, List, Sequence, Set, Tuple
 import trimesh
 import trimesh.scene
 from trimesh.exchange import gltf
@@ -561,9 +561,9 @@ class OpenDriveRoadNetwork(RoadMap):
         }
 
         # lane markings information
-        lane_dividers, edge_dividers = self._compute_traffic_dividers()
+        lane_dividers, road_dividers = self._compute_traffic_dividers()
         metadata["lane_dividers"] = lane_dividers
-        metadata["edge_dividers"] = edge_dividers
+        metadata["edge_dividers"] = road_dividers
 
         mesh.visual = trimesh.visual.TextureVisuals(
             material=trimesh.visual.material.PBRMaterial()
@@ -574,45 +574,31 @@ class OpenDriveRoadNetwork(RoadMap):
 
     def _compute_traffic_dividers(self, threshold=1):
         lane_dividers = []  # divider between lanes with same traffic direction
-        edge_dividers = []  # divider between roads sharing common border
-        edge_borders = []
+        road_dividers = []  # divider between roads sharing common border
         for road_id in self._roads:
             road = self._roads[road_id]
-            min_index, max_index = float("inf"), float("-inf")
-            for lane in road.lanes:
-                if abs(lane.index) < min_index:
-                    min_index = abs(lane.index)
-                if abs(lane.index) > max_index:
-                    max_index = abs(lane.index)
 
             for lane in road.lanes:
                 left_border_vertices_len = int((len(lane.lane_polygon) - 1) / 2)
                 left_side = lane.lane_polygon[:left_border_vertices_len]
-                right_side = lane.lane_polygon[
-                    left_border_vertices_len : (len(lane.lane_polygon) - 1)
-                ]
                 if lane.index not in [1, -1]:
                     lane_dividers.append(left_side)
-                if abs(lane.index) == min_index:
-                    edge_borders.append(left_side)
-                if abs(lane.index) == max_index:
-                    edge_borders.append(right_side)
 
-        # The edge borders that overlapped in positions form an edge divider
-        for i in range(len(edge_borders) - 1):
-            for j in range(i + 1, len(edge_borders)):
-                edge_border_i = np.array(
-                    [edge_borders[i][0], edge_borders[i][-1]]
-                )  # start and end position
-                edge_border_j = np.array(
-                    [edge_borders[j][-1], edge_borders[j][0]]
-                )  # start and end position with reverse traffic direction
+        # The road borders that overlapped in positions form an edge divider
+        # for i in range(len(edge_borders) - 1):
+        #     for j in range(i + 1, len(edge_borders)):
+        #         edge_border_i = np.array(
+        #             [edge_borders[i][0], edge_borders[i][-1]]
+        #         )  # start and end position
+        #         edge_border_j = np.array(
+        #             [edge_borders[j][-1], edge_borders[j][0]]
+        #         )  # start and end position with reverse traffic direction
+        #
+        #         # The edge borders of two lanes do not always overlap perfectly, thus relax the tolerance threshold to 1
+        #         if np.linalg.norm(edge_border_i - edge_border_j) < threshold:
+        #             edge_dividers.append(edge_borders[i])
 
-                # The edge borders of two lanes do not always overlap perfectly, thus relax the tolerance threshold to 1
-                if np.linalg.norm(edge_border_i - edge_border_j) < threshold:
-                    edge_dividers.append(edge_borders[i])
-
-        return lane_dividers, edge_dividers
+        return lane_dividers, road_dividers
 
     class Surface(RoadMap.Surface):
         def __init__(self, surface_id: str):
@@ -788,12 +774,8 @@ class OpenDriveRoadNetwork(RoadMap):
                 xs_outer.append(x_ref + (t_outer + width_offset) * math.cos(angle))
                 ys_outer.append(y_ref + (t_outer + width_offset) * math.sin(angle))
 
-            if self.index < 0:
-                xs.extend(xs_inner + xs_outer[::-1] + [xs_inner[0]])
-                ys.extend(ys_inner + ys_outer[::-1] + [ys_inner[0]])
-            else:
-                xs.extend(xs_inner[::-1] + xs_outer + [xs_inner[len(xs_inner) - 1]])
-                ys.extend(ys_inner[::-1] + ys_outer + [ys_inner[len(ys_inner) - 1]])
+            xs.extend(xs_inner + xs_outer[::-1] + [xs_inner[0]])
+            ys.extend(ys_inner + ys_outer[::-1] + [ys_inner[0]])
 
             assert len(xs) == len(ys)
             return list(zip(xs, ys))
@@ -813,9 +795,10 @@ class OpenDriveRoadNetwork(RoadMap):
                 lane_point = self.to_lane_coord(point)
                 width_at_offset = self.width_at_offset(lane_point.s)
                 # t-direction is negative for right side and positive for left side of the inner boundary reference
-                # line of lane, So the sign of lane_point.t should be -ve for a point to lie in a lane
+                # line of lane, So the sign of lane_point.t should be -ve for for a negative index and +ve for a
+                # positive index for a point to lie in a lane
                 return (
-                    np.sign(lane_point.t) < 0
+                    np.sign(lane_point.t) == np.sign(self.index)
                     and abs(lane_point.t) <= width_at_offset
                     and 0 <= lane_point.s < self.length
                 )
@@ -883,7 +866,13 @@ class OpenDriveRoadNetwork(RoadMap):
 
         @lru_cache(8)
         def vector_at_offset(self, start_offset: float) -> np.ndarray:
-            return super().vector_at_offset(start_offset)
+            road_offset = self.road.s_pos + start_offset
+            (x_ref, y_ref), heading = self._plan_view.calc(road_offset)
+            vector_at_s = np.array(Point(x=math.cos(heading), y=math.sin(heading)))
+            if self.index < 0:
+                return vector_at_s
+            else:
+                return -1 * vector_at_s
 
         @lru_cache(maxsize=8)
         def center_pose_at_point(self, point: Point) -> Pose:
@@ -896,10 +885,7 @@ class OpenDriveRoadNetwork(RoadMap):
             return super().curvature_radius_at_offset(offset, lookahead)
 
         def width_at_offset(self, lane_point_s: float) -> float:
-            if self.index < 0:
-                road_offset = lane_point_s + self.road.s_pos
-            else:
-                road_offset = (self._length - lane_point_s) + self.road.s_pos
+            road_offset = lane_point_s + self.road.s_pos
             inner_boundary, outer_boundary = self._lane_boundaries
             t_outer = outer_boundary.calc_t(road_offset, self.road.s_pos, self.index)
             t_inner = inner_boundary.calc_t(road_offset, self.road.s_pos, self.index)

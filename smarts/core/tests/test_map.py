@@ -246,8 +246,8 @@ def test_od_map_junction():
     # point on lane
     point = (118.0, 170.0, 0)
     refline_pt = l1.to_lane_coord(point)
-    assert round(refline_pt.s, 2) == 70.0
-    assert round(refline_pt.t, 2) == -2.0
+    assert round(refline_pt.s, 2) == 33.0
+    assert round(refline_pt.t, 2) == 2.0
 
     offset = refline_pt.s
     assert l1.width_at_offset(offset) == 3.75
@@ -280,8 +280,8 @@ def test_od_map_junction():
     # point not on lane but on road
     point = (112.0, 170.0, 0)
     refline_pt = l1.to_lane_coord(point)
-    assert round(refline_pt.s, 2) == 70.0
-    assert round(refline_pt.t, 2) == -8.0
+    assert round(refline_pt.s, 2) == 33.0
+    assert round(refline_pt.t, 2) == 8.0
 
     offset = refline_pt.s
     assert l1.width_at_offset(offset) == 3.75
@@ -600,8 +600,8 @@ def test_od_map_lane_offset():
     # point on lane
     point = (31.0, 2.0, 0)
     refline_pt = l0.to_lane_coord(point)
-    assert round(refline_pt.s, 2) == 43.54
-    assert round(refline_pt.t, 2) == -1.87
+    assert round(refline_pt.s, 2) == 6.08
+    assert round(refline_pt.t, 2) == 1.87
 
     offset = refline_pt.s
     assert round(l0.width_at_offset(offset), 2) == 3.1
@@ -622,8 +622,8 @@ def test_od_map_lane_offset():
     # point not on lane but on road
     point = (31.0, 4.5, 0)
     refline_pt = l0.to_lane_coord(point)
-    assert round(refline_pt.s, 2) == 43.44
-    assert round(refline_pt.t, 2) == -4.37
+    assert round(refline_pt.s, 2) == 6.19
+    assert round(refline_pt.t, 2) == 4.37
 
     offset = refline_pt.s
     assert round(l0.width_at_offset(offset), 2) == 3.1
