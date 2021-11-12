@@ -795,10 +795,9 @@ class OpenDriveRoadNetwork(RoadMap):
                 lane_point = self.to_lane_coord(point)
                 width_at_offset = self.width_at_offset(lane_point.s)
                 # t-direction is negative for right side and positive for left side of the inner boundary reference
-                # line of lane, So the sign of lane_point.t should be -ve for for a negative index and +ve for a
-                # positive index for a point to lie in a lane
+                # line of lane w.r.t its heading, So the sign of lane_point.t should be -ve for a point to lie in a lane
                 return (
-                    np.sign(lane_point.t) == np.sign(self.index)
+                    np.sign(lane_point.t) < 0
                     and abs(lane_point.t) <= width_at_offset
                     and 0 <= lane_point.s < self.length
                 )
@@ -841,7 +840,18 @@ class OpenDriveRoadNetwork(RoadMap):
 
         @lru_cache(maxsize=8)
         def to_lane_coord(self, world_point: Point) -> RefLinePoint:
-            return super().to_lane_coord(world_point)
+            refline_s = self.offset_along_lane(world_point)
+            if self.index > 0:
+                s = self._length - refline_s
+            else:
+                s = refline_s
+            vector = self.vector_at_offset(s)
+            normal = np.array([-vector[1], vector[0], 0])
+            center_at_s = self.from_lane_coord(RefLinePoint(s=s))
+            offcenter_vector = np.array(world_point) - center_at_s
+            t_sign = np.sign(np.dot(offcenter_vector, normal))
+            t = np.linalg.norm(offcenter_vector) * t_sign
+            return RefLinePoint(s=s, t=t)
 
         @lru_cache(maxsize=8)
         def center_at_point(self, point: Point) -> Point:
@@ -885,7 +895,10 @@ class OpenDriveRoadNetwork(RoadMap):
             return super().curvature_radius_at_offset(offset, lookahead)
 
         def width_at_offset(self, lane_point_s: float) -> float:
-            road_offset = lane_point_s + self.road.s_pos
+            if self.index < 0:
+                road_offset = lane_point_s + self.road.s_pos
+            else:
+                road_offset = (self._length - lane_point_s) + self.road.s_pos
             inner_boundary, outer_boundary = self._lane_boundaries
             t_outer = outer_boundary.calc_t(road_offset, self.road.s_pos, self.index)
             t_inner = inner_boundary.calc_t(road_offset, self.road.s_pos, self.index)

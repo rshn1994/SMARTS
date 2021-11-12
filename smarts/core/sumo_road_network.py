@@ -433,7 +433,14 @@ class SumoRoadNetwork(RoadMap):
 
         @lru_cache(maxsize=8)
         def to_lane_coord(self, world_point: Point) -> RefLinePoint:
-            return super().to_lane_coord(world_point)
+            s = self.offset_along_lane(world_point)
+            vector = self.vector_at_offset(s)
+            normal = np.array([-vector[1], vector[0], 0])
+            center_at_s = self.from_lane_coord(RefLinePoint(s=s))
+            offcenter_vector = np.array(world_point) - center_at_s
+            t_sign = np.sign(np.dot(offcenter_vector, normal))
+            t = np.linalg.norm(offcenter_vector) * t_sign
+            return RefLinePoint(s=s, t=t)
 
         @lru_cache(maxsize=8)
         def center_at_point(self, point: Point) -> Point:
