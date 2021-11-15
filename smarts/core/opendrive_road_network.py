@@ -228,9 +228,8 @@ class OpenDriveRoadNetwork(RoadMap):
     def load(self):
         # Parse the xml definition into an initial representation
         start = time.time()
-        od: OpenDriveElement = None
         with open(self._xodr_file, "r") as f:
-            od = parse_opendrive(etree.parse(f).getroot())
+            od: OpenDriveElement = parse_opendrive(etree.parse(f).getroot())
         end = time.time()
         elapsed = round((end - start) * 1000.0, 3)
         self._log.info(f"Parsing .xodr file: {elapsed} ms")
@@ -422,6 +421,7 @@ class OpenDriveRoadNetwork(RoadMap):
                         if not bool(in_roads & foe_in_roads):
                             result.append(foe)
                 lane.foes = list(set(result))
+
         end = time.time()
         elapsed = round((end - start) * 1000.0, 3)
         self._log.info(f"Third pass: {elapsed} ms")
@@ -574,29 +574,34 @@ class OpenDriveRoadNetwork(RoadMap):
 
     def _compute_traffic_dividers(self, threshold=1):
         lane_dividers = []  # divider between lanes with same traffic direction
-        road_dividers = []  # divider between roads sharing common border
+        road_dividers = []  # divider between roads with opposite traffic direction
         for road_id in self._roads:
             road = self._roads[road_id]
-
+            road_left_border = None
             for lane in road.lanes:
                 left_border_vertices_len = int((len(lane.lane_polygon) - 1) / 2)
                 left_side = lane.lane_polygon[:left_border_vertices_len]
                 if lane.index not in [1, -1]:
                     lane_dividers.append(left_side)
+                else:
+                    road_left_border = left_side
 
-        # The road borders that overlapped in positions form an edge divider
-        # for i in range(len(edge_borders) - 1):
-        #     for j in range(i + 1, len(edge_borders)):
-        #         edge_border_i = np.array(
-        #             [edge_borders[i][0], edge_borders[i][-1]]
-        #         )  # start and end position
-        #         edge_border_j = np.array(
-        #             [edge_borders[j][-1], edge_borders[j][0]]
-        #         )  # start and end position with reverse traffic direction
-        #
-        #         # The edge borders of two lanes do not always overlap perfectly, thus relax the tolerance threshold to 1
-        #         if np.linalg.norm(edge_border_i - edge_border_j) < threshold:
-        #             edge_dividers.append(edge_borders[i])
+            assert road_left_border
+
+            # The road borders that overlapped in positions form an edge divider
+            right = False
+            if "R" in road.road_id:
+                adjacent_road_id = road.road_id.replace("R", "L")
+                right = True
+            else:
+                adjacent_road_id = road.road_id.replace("L", "R")
+            if adjacent_road_id in self._roads:
+                if right:
+                    road_dividers.append(road_left_border)
+                else:
+                    road_dividers.append(road_left_border[::-1])
+
+        road_dividers = list(set(road_dividers))
 
         return lane_dividers, road_dividers
 
