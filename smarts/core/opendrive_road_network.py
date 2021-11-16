@@ -575,6 +575,7 @@ class OpenDriveRoadNetwork(RoadMap):
     def _compute_traffic_dividers(self, threshold=1):
         lane_dividers = []  # divider between lanes with same traffic direction
         road_dividers = []  # divider between roads with opposite traffic direction
+        dividers_checked = []
         for road_id in self._roads:
             road = self._roads[road_id]
             road_left_border = None
@@ -589,19 +590,16 @@ class OpenDriveRoadNetwork(RoadMap):
             assert road_left_border
 
             # The road borders that overlapped in positions form an edge divider
-            right = False
-            if "R" in road.road_id:
-                adjacent_road_id = road.road_id.replace("R", "L")
-                right = True
-            else:
-                adjacent_road_id = road.road_id.replace("L", "R")
-            if adjacent_road_id in self._roads:
-                if right:
-                    road_dividers.append(road_left_border)
+            id_split = road_id.split("_")
+            parent_road_id = f"{id_split[0]}_{id_split[1]}"
+            if parent_road_id not in dividers_checked:
+                dividers_checked.append(parent_road_id)
+                if "R" in road.road_id:
+                    adjacent_road_id = road.road_id.replace("R", "L")
                 else:
-                    road_dividers.append(road_left_border[::-1])
-
-        road_dividers = list(set(road_dividers))
+                    adjacent_road_id = road.road_id.replace("L", "R")
+                if adjacent_road_id in self._roads:
+                    road_dividers.append(road_left_border)
 
         return lane_dividers, road_dividers
 
