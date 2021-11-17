@@ -43,7 +43,9 @@ import smarts.core.models
 from envision.types import State
 from envision.web import dist as web_dist
 from smarts.core.utils.file import path2hash
-
+from envision.client import Client as Envision
+from smarts.core.colors import SceneColors
+from envision import types as envision_types
 logging.basicConfig(level=logging.WARNING)
 
 
@@ -473,6 +475,32 @@ def main():
     args = parser.parse_args()
 
     run(scenario_dirs=args.scenarios, max_capacity_mb=args.max_capacity, port=args.port)
+    envision = Envision()
+
+    traffic = {}
+    position = {}
+    speed = {}
+    heading = {}
+    lane_ids = {}
+    bubble_geometry = []
+    scores = {}
+    scenario_name = "od_junction"
+
+    state = envision_types.State(
+        traffic=traffic,
+        scenario_id=1,
+        scenario_name=scenario_name,
+        bubbles=bubble_geometry,
+        scene_colors=SceneColors.EnvisionColors.value,
+        scores=scores,
+        ego_agent_ids=[],
+        position=position,
+        speed=speed,
+        heading=heading,
+        lane_ids=lane_ids,
+        frame_time=1.0,
+    )
+    envision.send(state)
 
 
 if __name__ == "__main__":
