@@ -37,7 +37,9 @@ if __name__ == "__main__":
         "od2mesh.py",
         description="Utility to export opendrive road networks to mesh files.",
     )
-    parser.add_argument("scenario_path", help="path to opendrive xodr file (*.xodr)", type=str)
+    parser.add_argument(
+        "scenario_path", help="path to opendrive xodr file (*.xodr)", type=str
+    )
     args = parser.parse_args()
 
     generate_glb_from_opendrive_network(args.scenario_path)
