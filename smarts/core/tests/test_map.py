@@ -788,8 +788,6 @@ def lp_points(lps):
 
 def visualize():
     import matplotlib.pyplot as plt
-    import matplotlib
-    matplotlib.use('TkAgg')
     fig, ax = plt.subplots()
 
     root = path.join(Path(__file__).parent.absolute(), "maps")
