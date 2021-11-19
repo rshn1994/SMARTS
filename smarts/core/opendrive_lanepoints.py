@@ -325,7 +325,7 @@ class OpenDriveLanePoints:
             if half_distant_current_next_shape_lp < minimum_dist_next_shape_lp:
                 pos = mid_point_current_next_shape_lp
             dist_pos_next_shape_lp = np.linalg.norm(
-                next_shape_lp.lp.pose.position - pos
+                np.subtract(next_shape_lp.lp.pose.position, pos)
             )
             if dist_pos_next_shape_lp < last_spacing_threshold_dist:
                 break
