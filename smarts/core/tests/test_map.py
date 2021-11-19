@@ -788,6 +788,7 @@ def lp_points(lps):
 
 def visualize():
     import matplotlib.pyplot as plt
+
     fig, ax = plt.subplots()
 
     root = path.join(Path(__file__).parent.absolute(), "maps")
