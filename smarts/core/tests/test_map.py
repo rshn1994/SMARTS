@@ -779,15 +779,6 @@ def test_od_map_motorway():
     assert len(candidates) == 4
 
 
-def lane_points(lane):
-    polygon: Polygon = lane.shape()
-    xs, ys = [], []
-    for x, y in polygon.exterior.coords:
-        xs.append(x)
-        ys.append(y)
-    return xs, ys
-
-
 def lp_points(lps):
     xs, ys = [], []
     for lp in lps:
@@ -813,7 +804,10 @@ def visualize():
     for road_id in roads:
         road = roads[road_id]
         for lane in road.lanes:
-            xs, ys = lane_points(lane)
+            xs, ys = [], []
+            for x, y in lane.lane_polygon:
+                xs.append(x)
+                ys.append(y)
             plt.plot(xs, ys, "k-")
             if lane.is_drivable:
                 _, new_lps = road_map._lanepoints._shape_lanepoints_along_lane(
