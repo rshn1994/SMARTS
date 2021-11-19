@@ -23,7 +23,6 @@ import math
 from os import path
 from pathlib import Path
 import pytest
-from shapely.geometry.polygon import Polygon
 from smarts.core.coordinates import Point
 from smarts.core.opendrive_road_network import OpenDriveRoadNetwork
 from smarts.core.scenario import Scenario
