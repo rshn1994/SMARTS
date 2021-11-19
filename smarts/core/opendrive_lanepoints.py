@@ -285,7 +285,7 @@ class OpenDriveLanePoints:
         spacing: float,
         newly_created_lanepoints: List[LinkedLanePoint],
     ) -> LinkedLanePoint:
-        rmlane = shape_lp.lp.lane
+        curr_lane = shape_lp.lp.lane
 
         curr_lanepoint = first_linked_lanepoint
 
@@ -335,7 +335,7 @@ class OpenDriveLanePoints:
 
             linked_lanepoint = LinkedLanePoint(
                 lp=LanePoint(
-                    lane=rmlane,
+                    lane=curr_lane,
                     pose=Pose(position=pos, orientation=orientation),
                 ),
                 nexts=[],
