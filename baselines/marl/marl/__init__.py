@@ -19,10 +19,11 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+
 from pathlib import Path
 
 import gym
-from baselines.marl_benchmark.agents import load_config
+from marl.agents import load_config
 
 from smarts.core.agent import AgentSpec
 from smarts.core.scenario import Scenario

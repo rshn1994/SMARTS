@@ -19,34 +19,11 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-
-from os import path
-
-from setuptools import find_packages, setup
-
-this_dir = path.abspath(path.dirname(__file__))
-with open(path.join(this_dir, "README.md"), encoding="utf-8") as f:
-    long_description = f.read()
+from marl.wrappers.rllib.frame_stack import FrameStack
 
 
-""" Modified setup.py to include option for changing SMARTS version or, by default,
-the latest stable version SMARTS will used """
-setup(
-    name="marl_benchmark",
-    description="Multi-Agent Reinforcement Learning Benchmarks",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    version="0.1.0",
-    packages=find_packages(exclude=["tests"]),
-    include_package_data=True,
-    zip_safe=True,
-    python_requires=">=3.7",
-    install_requires=[
-        "smarts[train]==0.4.18",
-        "setuptools>=41.0.0,!=50.0",
-        "dill",
-        "black==20.8b1",
-        "opencv-python",
-        "gym",
-    ],
-)
+class EarlyDone(FrameStack):
+    def step(self, agent_actions):
+        observations, rewards, dones, infos = super(EarlyDone, self).step(agent_actions)
+        dones["__all__"] = any(list(dones.values()))
+        return observations, rewards, dones, infos

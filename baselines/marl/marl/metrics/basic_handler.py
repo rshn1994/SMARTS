@@ -29,10 +29,10 @@ from collections import defaultdict
 import numpy as np
 from scipy.spatial import distance
 
-from baselines.marl_benchmark.common import CalObs
-from baselines.marl_benchmark.metrics import MetricHandler
-from baselines.marl_benchmark.metrics.basic_metrics import BehaviorMetric
-from baselines.marl_benchmark.utils import episode_log, format, plot
+from marl.common import CalObs
+from marl.metrics import MetricHandler
+from marl.metrics.basic_metrics import BehaviorMetric
+from marl.utils import episode_log, format, plot
 
 
 def agent_info_adapter(env_obs, shaped_reward: float, raw_info: dict):

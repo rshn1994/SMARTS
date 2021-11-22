@@ -19,6 +19,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+
 import math
 from collections import OrderedDict, defaultdict
 from dataclasses import dataclass
@@ -26,8 +27,8 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 
-from baselines.marl_benchmark.metrics import MetricHandler
-from baselines.marl_benchmark.utils.episode_log import BasicEpisodeLog
+from marl.metrics import MetricHandler
+from marl.utils.episode_log import BasicEpisodeLog
 
 
 @dataclass

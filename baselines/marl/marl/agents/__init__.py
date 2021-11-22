@@ -17,16 +17,17 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+
 import importlib
 import re
 from pathlib import Path
 import gym
 import yaml
 
-from baselines.marl_benchmark import common
-from baselines.marl_benchmark.metrics import basic_handler as metrics
-from baselines.marl_benchmark.utils import format
-from baselines.marl_benchmark.wrappers import rllib as rllib_wrappers
+from marl import common
+from marl.metrics import basic_handler as metrics
+from marl.utils import format
+from marl.wrappers import rllib as rllib_wrappers
 
 
 from smarts.core.agent_interface import (

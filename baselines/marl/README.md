@@ -15,7 +15,7 @@ This directory contains the scenarios, training environment, and agents used in 
 ## Setup
 ```bash
 # git clone ...
-cd <projec/baseline/marl_benchmark>
+cd <SMARTS/baselines/marl>
 
 # setup virtual environment; presently at least Python 3.7 and higher is officially supported
 python3.7 -m venv .venv
@@ -34,7 +34,7 @@ pip install -e .
 To run the training procedure,
 
 ```bash
-# from baselines/marl_benchmark/
+$ cd <SMARTS/baselines/marl>
 $ python3.7 run.py <scenario> -f <config_file>
 # E.x. python3.7 run.py scenarios/intersections/4lane -f agents/ppo/baseline-lane-control.yaml
 ```
@@ -42,7 +42,7 @@ $ python3.7 run.py <scenario> -f <config_file>
 To run the evaluation procedure for multiple algorithms,
 
 ```bash
-# from baselines/marl_benchmark/
+$ cd <SMARTS/baselines/marl>
 $ python evaluate.py <scenario> -f <config_files>
 # E.x. python3.7  evaluate.py scenarios/intersections/4lane \
 #          -f agents/ppo/baseline-lane-control.yaml \
