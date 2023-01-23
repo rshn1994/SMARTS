@@ -15,7 +15,7 @@ attrs==22.2.0
 Automat==22.10.0
 backcall==0.2.0
 beautifulsoup4==4.11.1
-bleach==5.0.1
+bleach==6.0.0
 blessed==1.19.1
 cached-property==1.5.2
 cachetools==4.2.4
@@ -27,11 +27,10 @@ cloudpickle==1.3.0
 colorama==0.4.6
 colorful==0.5.5
 comm==0.1.2
-commonmark==0.9.1
 constantly==15.1.0
 coverage==7.0.5
 cycler==0.11.0
-debugpy==1.6.5
+debugpy==1.6.6
 decorator==5.1.1
 defusedxml==0.7.1
 dm-tree==0.1.8
@@ -74,15 +73,17 @@ jsonschema==4.17.3
 jupyter-client==6.1.12
 jupyter-server==1.23.5
 jupyter-server-mathjax==0.2.6
-jupyter_core==5.1.3
+jupyter_core==5.1.4
 jupyterlab-pygments==0.2.2
 Keras-Preprocessing==1.1.2
 kiwisolver==1.4.4
 lz4==4.3.2
 Markdown==3.4.1
-MarkupSafe==2.1.1
+markdown-it-py==2.1.0
+MarkupSafe==2.1.2
 matplotlib==3.5.3
 matplotlib-inline==0.1.6
+mdurl==0.1.2
 mistune==2.0.4
 msgpack==1.0.4
 multidict==6.0.4
@@ -95,7 +96,7 @@ networkx==3.0
 numpy==1.18.5
 nvidia-ml-py==11.495.46
 oauthlib==3.2.2
-opencensus==0.11.0
+opencensus==0.11.1
 opencensus-context==0.1.3
 opencv-python==4.7.0.68
 opencv-python-headless==4.2.0.34
@@ -113,7 +114,7 @@ Pillow==8.2.0
 pkgutil_resolve_name==1.3.10
 platformdirs==2.6.2
 pluggy==1.0.0
-prometheus-client==0.15.0
+prometheus-client==0.16.0
 prompt-toolkit==3.0.36
 protobuf==3.19.6
 psutil==5.9.4
@@ -148,7 +149,7 @@ ray==1.0.1.post1
 redis==3.4.1
 requests==2.28.2
 requests-oauthlib==1.3.1
-rich==13.1.0
+rich==13.2.0
 rsa==4.9
 Rtree==1.0.1
 scikit-image==0.19.3
@@ -171,7 +172,7 @@ tensorflow==2.2.1
 tensorflow-estimator==2.2.0
 termcolor==2.2.0
 terminado==0.17.1
-tifffile==2021.11.2
+tifffile==2023.1.23.1
 tinycss2==1.2.1
 tomli==2.0.1
 torch==1.4.0
